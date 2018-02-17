@@ -40,7 +40,7 @@ main = handle handler $ do
               	x <- try $ readFile file
 		case x of
 		  Left exc -> handler exc
-		  Right content -> putStr content
+		  Right content -> Process content
 
 handler :: IOError -> IO ()
 handler ex = putStrLn (errPrnt 0) >> exitFailure
