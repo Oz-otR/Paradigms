@@ -6,6 +6,7 @@ import Control.Exception
 import Data.IORef
 import Data.List
 import Data.Maybe
+import Control.Monad
 
 type Counter = Int -> IO Int
 
@@ -65,10 +66,12 @@ handler ex = putStrLn (errPrnt 0) >> exitFailure
 writeout path x = writeFile path (errPrnt x)
 
 pass out content = do
-     {let index = getIn 0 $ removeEmpties $ lines content
-     ; let pruned = removeEmpties $ lines content
+     {let pruned = removeEmpties $ lines content
+     ; let index = getIn 0 pruned
      ; let ofs = out
-     ; print $ sorted index && not ((-1) `elem` index) -- chk all cat on odr
+     ; let blks = reverse $ splt 5 pruned index
+     ; print blks
+     -- $ sorted index && not ((-1) `elem` index) -- chk all cat on odr
      }
 
 -- checks if args are in right order
@@ -77,11 +80,24 @@ sorted [] = True
 sorted [x] = True
 sorted (x:y:xs) = if x < y then sorted (y:xs) else False
 
+-- split each section into a tuple of lists
+splt x list index = if x >= 0
+       	    	       then snd(splitAt (index !! x)  list):splt (x - 1) (fst $ splitAt (index !! x) list) index
+		       else []
+
 -- adWrite = 1:(2:(3:(4:(5:[]))))
 -- gets a list of indicies as to where the sections are
 getIn x list = if x < 6
       	       	  then (fromMaybe (-1) $ elemIndex (sections !! x) list):getIn (x + 1) list
 		  else []
+
+-- Return nth element from a tuple
+get0 (a,_,_,_,_,_) = a -- needed as fst and snd only work for pairs
+get1 (_,a,_,_,_,_) = a -- 
+get2 (_,_,a,_,_,_) = a
+get3 (_,_,_,a,_,_) = a
+get4 (_,_,_,_,a,_) = a
+get5 (_,_,_,_,_,a) = a
 
 errPrnt :: Int -> String
 errPrnt 0 = "File Not Found"
