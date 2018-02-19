@@ -68,6 +68,9 @@ writeout path x = writeFile path (errPrnt x)
 pass out content = do
      {let pruned = removeEmpties $ lines content
      ; let index = getIn 0 pruned
+     ; if not(sorted index && not ((-1) `elem` index))
+       	  then putStrLn (errPrnt 10) >> exitFailure
+	  else return ()
      ; let ofs = out
      ; let blks = reverse $ splt 5 pruned index
      ; print blks
@@ -80,7 +83,7 @@ sorted [] = True
 sorted [x] = True
 sorted (x:y:xs) = if x < y then sorted (y:xs) else False
 
--- split each section into a tuple of lists
+-- split each section into a list of lists
 splt x list index = if x >= 0
        	    	       then snd(splitAt (index !! x)  list):splt (x - 1) (fst $ splitAt (index !! x) list) index
 		       else []
@@ -114,6 +117,10 @@ errPrnt x = "Error while Parsing File"
 removeEmpties x = [ c | c <- x, length c /= 0]
 
 -- EXPERIMENTAL
+
+--when example
+-- when (not(sorted index && not ((-1) `elem` index))) (putStrLn $ errPrnt 10)
+
 
 -- Global Counter >> IMPURE: dont know if ill need it
 mkCntr :: IO Counter
