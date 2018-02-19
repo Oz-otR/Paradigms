@@ -50,7 +50,7 @@ turn = handle handler $ do
               	x <- try $ readFile file
 		case x of
 		  Left exc -> handler exc
-		  Right content -> print $ lines content
+		  Right content -> pass (args !! 1) content
 				-- print $ getIn 0 $ lines content
 		  		-- print $ lines content -- lines in a list
 		    		-- llst content
@@ -61,12 +61,21 @@ turn = handle handler $ do
 handler :: IOError -> IO ()
 handler ex = putStrLn (errPrnt 0) >> exitFailure
 
--- Does some dumb shit ignore its a test
-llst cnt = do
-     let l = map ((!!) (lines cnt)) [0,1..(length (lines cnt) - 1)]
-     let line = l !! 0
-     putStr line
-     return line
+-- writeout :: Int ->
+writeout path x = writeFile path (errPrnt x)
+
+pass out content = do
+     {let index = getIn 0 $ removeEmpties $ lines content
+     ; let pruned = removeEmpties $ lines content
+     ; let ofs = out
+     ; print $ sorted index && not ((-1) `elem` index) -- chk all cat on odr
+     }
+
+-- checks if args are in right order
+sorted :: (Ord a) => [a] -> Bool
+sorted [] = True
+sorted [x] = True
+sorted (x:y:xs) = if x < y then sorted (y:xs) else False
 
 -- adWrite = 1:(2:(3:(4:(5:[]))))
 -- gets a list of indicies as to where the sections are
@@ -74,6 +83,21 @@ getIn x list = if x < 6
       	       	  then (fromMaybe (-1) $ elemIndex (sections !! x) list):getIn (x + 1) list
 		  else []
 
+errPrnt :: Int -> String
+errPrnt 0 = "File Not Found"
+errPrnt 1 = "Wrong Number of Arguments"
+errPrnt 2 = "Partial Assignment Error"
+errPrnt 3 = "Invalid Machine/Task"
+errPrnt 4 = "Machine Penalty Error"
+errPrnt 5 = "Invalid Task Description"
+errPrnt 6 = "Invalid Penalty"
+errPrnt 7 = "No Valid Solution"
+errPrnt 8 = "Integer not in Range"
+errPrnt x = "Error while Parsing File"
+
+removeEmpties x = [ c | c <- x, length c /= 0]
+
+-- EXPERIMENTAL
 
 -- Global Counter >> IMPURE: dont know if ill need it
 mkCntr :: IO Counter
@@ -98,27 +122,6 @@ llst cnt = do
      let line = l !! 0
      putStr line
      return line
-
--- writeout :: Int ->
-writeout path x = writeFile path (errPrnt x)
-
-errPrnt :: Int -> String
-errPrnt 0 = "File Not Found"
-errPrnt 1 = "Wrong Number of Arguments"
-errPrnt 2 = "Partial Assignment Error"
-errPrnt 3 = "Invalid Machine/Task"
-errPrnt 4 = "Machine Penalty Error"
-errPrnt 5 = "Invalid Task Description"
-errPrnt 6 = "Invalid Penalty"
-errPrnt 7 = "No Valid Solution"
-errPrnt 8 = "Integer not in Range"
-errPrnt x = "Error while Parsing File"
-
-
-
-
-
-
 
 
 
