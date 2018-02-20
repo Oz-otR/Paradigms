@@ -77,15 +77,33 @@ pass out content = do
      }
 
 parseDriver out content = print $ length $ content !! 0
-
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
              then putStrLn (errPrnt 10) >> exitFailure
 	     else return()
--- pfpa l = 
--- pfm l
--- ptnt l
--- pmp l
--- ptmp l
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>	          
+-- pfpa l = if ((length l) == 1)
+   	       then return ()
+	       else 
+-- auxfpa ('(':_:',':_:')':xs)
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- pfm ('(':_:',':_:')':xs) = 
+-- pfm _ = putStrLn (errPrnt 10) >> exitFailure
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ptnt l = if ((length l) == 1)
+               then return ()
+               else
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- pmp l = if ((length l) == 1)
+               then return ()
+               else
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ptmp l = if ((length l) == 1)
+               then return ()
+               else
+
 
 -- checks if args are in right order
 sorted :: (Ord a) => [a] -> Bool
