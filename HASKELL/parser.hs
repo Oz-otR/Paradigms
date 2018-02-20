@@ -71,11 +71,21 @@ pass out content = do
      ; if not(sorted index && not ((-1) `elem` index))
        	  then putStrLn (errPrnt 10) >> exitFailure
 	  else return ()
-     ; let ofs = out
-     ; let blks = reverse $ splt 5 pruned index
-     ; print blks
-     -- $ sorted index && not ((-1) `elem` index) -- chk all cat on odr
+     ; let blocks = reverse $ splt 5 pruned index
+     ; parseDriver out blocks
+     -- $ sorted index && not ((-1) `elem` index) -- chk all cat in odr
      }
+
+parseDriver out content = print $ length $ content !! 0
+
+pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
+             then putStrLn (errPrnt 10) >> exitFailure
+	     else return()
+-- pfpa l = 
+-- pfm l
+-- ptnt l
+-- pmp l
+-- ptmp l
 
 -- checks if args are in right order
 sorted :: (Ord a) => [a] -> Bool
