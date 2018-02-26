@@ -95,21 +95,21 @@ pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
 -- Parse Forced -> DONE         
 pfpa l = if ((length l) == 1)
             then return ()
-            else if rc' l 0 "FF"
+            else if rc' l 1 "FF"
                 then return()
                 else putStrLn (errPrnt 3) >> exitFailure
 
 -- Parse Forbidden -> DONE
 pfm l = if ((length l) == 1)
            then return()
-           else if rc' l 0 "FF"
+           else if rc' l 1 "FF"
                then return()
                else putStrLn (errPrnt 3) >> exitFailure
 
 -- Parse TNT -> DONE
 ptnt l = if ((length l) == 1)
             then return ()
-            else if rc' l 0 "TNT"
+            else if rc' l 1 "TNT"
                 then return()
 	        else putStrLn (errPrnt 5) >> exitFailure
 
@@ -121,7 +121,7 @@ ptnt l = if ((length l) == 1)
 -- Parse TNP -> DONE
 ptnp l = if ((length l) == 1)
             then return ()
-            else if rc' l 0 "TNP"
+            else if rc' l 1 "TNP"
                 then return()
                 else putStrLn (errPrnt 5) >> exitFailure
 
@@ -142,11 +142,17 @@ patt ('(':a:',':b:')':xs)
     | otherwise = "No"
 patt other = "No"
 
+-- gonna adapt this for MPs
+removeNonUppercase st = [ c | c <- st, c `elem` ['A'..'Z']] 
+
 -- checks if args are in right order
 sorted :: (Ord a) => [a] -> Bool
 sorted [] = True
 sorted [x] = True
 sorted (x:y:xs) = if x < y then sorted (y:xs) else False
+
+-- removes the new line / empty strings
+removeEmpties x = [ c | c <- x, length c /= 0]
 
 -- split each section into a list of lists
 splt x list index = if x >= 0
@@ -179,7 +185,7 @@ errPrnt 7 = "No Valid Solution"
 errPrnt 8 = "Integer not in Range"
 errPrnt x = "Error while Parsing File"
 
-removeEmpties x = [ c | c <- x, length c /= 0]
+-- removeEmpties x = [ c | c <- x, length c /= 0]
 
 -- EXPERIMENTAL
 
