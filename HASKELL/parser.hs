@@ -21,12 +21,12 @@ sections = ["Name:"
 -- strtoA :: String -> Array
 -- strtoA x = listArray(0, length x - 1) x
 -- stringToArray (sections !! 0)!0 => 'N'
-strToArr :: String  -> Array Int Char
-strToArr s = listArray (0, length s - 1) s
+-- strToArr :: String  -> Array Int Char
+-- strToArr s = listArray (0, length s - 1) s
 
-lsCom2 = [(x,y) |x <- [1..5], y <- [1..5], x * y == 25]
-removeNonUppercase st = [ c | c <- st, c `elem` ['A'..'Z']]
-noSpace s = [c | c <- s, c `elem` ['0'..'9']]
+-- lsCom2 = [(x,y) |x <- [1..5], y <- [1..5], x * y == 25]
+-- removeNonUppercase st = [ c | c <- st, c `elem` ['A'..'Z']]
+-- noSpace s = [c | c <- s, c `elem` ['0'..'9']]
 
 eqs4 = do putStrLn "What is 2 + 2?"
           x <- readLn
@@ -44,7 +44,7 @@ turn = handle handler $ do
     args <- getArgs
     if length args /= 2
        then do 
-       	    putStrLn $ errPrnt 0
+       	    putStrLn $ errPrnt 1
 	    exitFailure
        else case init args of 
               [file] -> do
@@ -72,38 +72,61 @@ pass out content = do
        	  then putStrLn (errPrnt 10) >> exitFailure
 	  else return ()
      ; let blocks = reverse $ splt 5 pruned index
-     ; parseDriver out blocks
+     ; parseDriver out blocks -- print blocks to view the list
      -- $ sorted index && not ((-1) `elem` index) -- chk all cat in odr
      }
 
-parseDriver out content = print $ length $ content !! 0
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+parseDriver out content = do
+     { pname $ content !! 0
+     ; print $ content !! 1
+     --; pfpa $ content !! 1
+     --; pfm content !! 2
+     --; ptnt content !! 3
+     --; pmp content !! 4
+     --; ptnp content !! 5
+     }
+-- print $ length $ content !! 0
+
+
+-- Parse Name -> DONE
 pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
              then putStrLn (errPrnt 10) >> exitFailure
 	     else return()
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>	          
+
+-- Parse Forced -> IP	          
 -- pfpa l = if ((length l) == 1)
-   	       then return ()
-	       else 
--- auxfpa ('(':_:',':_:')':xs)
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+--   	       then return ()
+--	       else 
+
+-- Parse Forbidden -> IP
 -- pfm ('(':_:',':_:')':xs) = 
 -- pfm _ = putStrLn (errPrnt 10) >> exitFailure
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+-- Parse TNT -> IP
 -- ptnt l = if ((length l) == 1)
-               then return ()
-               else
+--             then return ()
+--             else
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- Parse Penalties -> IP
 -- pmp l = if ((length l) == 1)
-               then return ()
-               else
+--             then return ()
+--             else
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- ptmp l = if ((length l) == 1)
-               then return ()
-               else
+-- Parse TNP -> IP
+-- ptnp l = if ((length l) == 1)
+--             then return ()
+--             else
 
+
+-- Check for (1..8,A..H) pattern
+patt ('(':a:',':b:',':c:')':xs)
+    | ((length xs) == 0 && a `elem` ['A'..'H'] && b `elem`['A'..'H'] && c `elem`['1'..'8'])= "TNP"
+    | otherwise = "No"
+patt ('(':a:',':b:')':xs)
+    | ((length xs) == 0 && a `elem` ['1'..'8'] && b `elem`['A'..'H'])= "FF"
+    | ((length xs) == 0 && a `elem` ['A'..'H'] && b `elem`['A'..'H'])= "TNT"
+    | otherwise = "No"
+patt other = "No"
 
 -- checks if args are in right order
 sorted :: (Ord a) => [a] -> Bool
@@ -122,7 +145,7 @@ getIn x list = if x < 6
       	       	  then (fromMaybe (-1) $ elemIndex (sections !! x) list):getIn (x + 1) list
 		  else []
 
--- Return nth element from a tuple
+-- Return nth element from a 6 tuple
 get0 (a,_,_,_,_,_) = a -- needed as fst and snd only work for pairs
 get1 (_,a,_,_,_,_) = a -- 
 get2 (_,_,a,_,_,_) = a
