@@ -78,12 +78,11 @@ pass out content = do
 
 parseDriver out content = do
      { pname $ content !! 0
-     ; print $ content !! 1
-     --; pfpa $ content !! 1
-     --; pfm content !! 2
-     --; ptnt content !! 3
-     --; pmp content !! 4
-     --; ptnp content !! 5
+     ; pfpa $ content !! 1
+     ; pfm $ content !! 2
+     ; ptnt $ content !! 3
+     --; pmp $ content !! 4
+     ; ptnp $ content !! 5
      }
 -- print $ length $ content !! 0
 
@@ -93,30 +92,45 @@ pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
              then putStrLn (errPrnt 10) >> exitFailure
 	     else return()
 
--- Parse Forced -> IP	          
--- pfpa l = if ((length l) == 1)
---   	       then return ()
---	       else 
+-- Parse Forced -> DONE         
+pfpa l = if ((length l) == 1)
+            then return ()
+            else if rc' l 0 "FF"
+                then return()
+                else putStrLn (errPrnt 3) >> exitFailure
 
--- Parse Forbidden -> IP
--- pfm ('(':_:',':_:')':xs) = 
--- pfm _ = putStrLn (errPrnt 10) >> exitFailure
+-- Parse Forbidden -> DONE
+pfm l = if ((length l) == 1)
+           then return()
+           else if rc' l 0 "FF"
+               then return()
+               else putStrLn (errPrnt 3) >> exitFailure
 
--- Parse TNT -> IP
--- ptnt l = if ((length l) == 1)
---             then return ()
---             else
+-- Parse TNT -> DONE
+ptnt l = if ((length l) == 1)
+            then return ()
+            else if rc' l 0 "TNT"
+                then return()
+	        else putStrLn (errPrnt 5) >> exitFailure
 
--- Parse Penalties -> IP
+-- Parse Penalties -> wip
 -- pmp l = if ((length l) == 1)
 --             then return ()
 --             else
 
--- Parse TNP -> IP
--- ptnp l = if ((length l) == 1)
---             then return ()
---             else
+-- Parse TNP -> DONE
+ptnp l = if ((length l) == 1)
+            then return ()
+            else if rc' l 0 "TNP"
+                then return()
+                else putStrLn (errPrnt 5) >> exitFailure
 
+-- recursive checker
+rc' arg index verifier = if (index < (length arg) && ((patt $ arg !! index) == verifier))
+    	      	       	    then rc' arg (index + 1) verifier
+			    else if index == length arg
+			        then True
+				else False
 
 -- Check for (1..8,A..H) pattern
 patt ('(':a:',':b:',':c:')':xs)
