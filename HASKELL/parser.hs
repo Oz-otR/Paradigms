@@ -83,7 +83,7 @@ parseDriver out content = do
      --; pfpa $ content !! 1
      --; pfm $ content !! 2
      --; ptnt $ content !! 3
-     --; pmp $ content !! 4
+     ; pmp $ content !! 4
      --; ptnp $ content !! 5
      -- ; print $ content !! 4
      }
@@ -92,7 +92,7 @@ parseDriver out content = do
 
 -- Parse Name -> DONE
 pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
-             then putStrLn (errPrnt $ length l) >> exitFailure
+             then putStrLn (errPrnt 10) >> exitFailure
 	     else return()
 
 -- Parse Forced -> DONE         
@@ -121,7 +121,7 @@ pmp l = if ((length l) /= 9)
            then putStrLn (errPrnt 4) >> exitFailure
            else if (mprc l 1 == 0)
 	       then return()
-	       else putStrLn (errPrnt $ 0) >> exitFailure
+	       else putStrLn (errPrnt $ mprc l 1) >> exitFailure
 
 -- Parse TNP -> DONE
 ptnp l = if ((length l) == 1)
