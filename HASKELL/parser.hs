@@ -79,56 +79,62 @@ pass out content = do
      }
 
 parseDriver out content = do
-     { pname $ content !! 0
-     --; pfpa $ content !! 1
-     --; pfm $ content !! 2
-     --; ptnt $ content !! 3
-     ; pmp $ content !! 4
-     --; ptnp $ content !! 5
+     { pname out $ content !! 0
+     ; pfpa out $ content !! 1
+     ; pfm out $ content !! 2
+     ; ptnt out $ content !! 3
+     ; pmp out $ content !! 4
+     ; ptnp out $ content !! 5
      -- ; print $ content !! 4
      }
 -- print $ length $ content !! 0
 
 
 -- Parse Name -> DONE
-pname l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
+pname out l = if ((length l) /= 2 || ' ' `elem` (l !! 1) )
              then putStrLn (errPrnt 10) >> exitFailure
 	     else return()
+	     --writeout out 10 >> exitFailure
 
 -- Parse Forced -> DONE         
-pfpa l = if ((length l) == 1)
+pfpa out l = if ((length l) == 1)
             then return ()
             else if rc' l 1 "FF"
                 then return()
                 else putStrLn (errPrnt 3) >> exitFailure
+		--writeout out 3 >> exitFailure
 
 -- Parse Forbidden -> DONE
-pfm l = if ((length l) == 1)
+pfm out l = if ((length l) == 1)
            then return()
            else if rc' l 1 "FF"
                then return()
                else putStrLn (errPrnt 3) >> exitFailure
+	       --writeout out 3 >> exitFailure
 
 -- Parse TNT -> DONE
-ptnt l = if ((length l) == 1)
+ptnt out l = if ((length l) == 1)
             then return ()
             else if rc' l 1 "TNT"
                 then return()
 	        else putStrLn (errPrnt 5) >> exitFailure
+		--writeout out 5 >> exitFailure
 
 -- Parse Penalties -> wip
-pmp l = if ((length l) /= 9)
+pmp out l = if ((length l) /= 9)
            then putStrLn (errPrnt 4) >> exitFailure
            else if (mprc l 1 == 0)
 	       then return()
 	       else putStrLn (errPrnt $ mprc l 1) >> exitFailure
+	       --writeout out (mprc l 1) >> exitFailure
 
 -- Parse TNP -> DONE
-ptnp l = if ((length l) == 1)
+ptnp out l = if ((length l) == 1)
             then return ()
             else if rc' l 1 "TNP"
                 then return()
                 else putStrLn (errPrnt 5) >> exitFailure
+		--writeout out 5 >> exitFailure
 
 -- recursive checker
 rc' arg index verifier = if (index < (length arg) && ((patt $ arg !! index) == verifier))
