@@ -67,15 +67,14 @@ handler ex = putStrLn (errPrnt 0) >> exitFailure
 writeout path x = writeFile path (errPrnt x)
 
 pass out content = do
-     {let pruned = removeEmpties $ lines content
-     ; print $ content
+     {let pruned = removeEmpties $ lines $ filter (/= '\r') content
      ; let index = getIn 0 pruned
      --; print $ index
      ; if not(sorted index && not ((-1) `elem` index))
        	  then putStrLn (errPrnt 10) >> exitFailure
 	  else return ()
      ; let blocks = reverse $ splt 5 pruned index
-     ; print $ blocks
+     --; print $ blocks
      ; parseDriver out blocks -- print blocks to view the list
      }
 
