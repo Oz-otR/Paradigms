@@ -67,9 +67,12 @@ handler ex = putStrLn (errPrnt 0) >> exitFailure
 writeout path x = writeFile path (errPrnt x)
 
 pass out content = do
-     {let pruned = removeEmpties $ lines $ filter (/= '\r') content
+     { if not(leastone (filter (/= '\r') content) 1)
+          then putStrLn (errPrnt 10) >> exitFailure
+	  else return()
+     ; let pruned = removeEmpties $ lines $ filter (/= '\r') content
      ; let index = getIn 0 pruned
-     --; print $ index
+     ; print $ content
      ; if not(sorted index && not ((-1) `elem` index))
        	  then putStrLn (errPrnt 10) >> exitFailure
 	  else return ()
@@ -80,15 +83,15 @@ pass out content = do
 
 parseDriver out content = do
      { pname out $ content !! 0
-     --; print $ "Hello\n"
+     --; print $ "Hello1\n"
      ; pfpa out $ content !! 1
-     --; print $ "Hello\n"
+     --; print $ "Hello2\n"
      ; pfm out $ content !! 2
-     --; print $ "Hello\n"
+     --; print $ "Hello3\n"
      ; ptnt out $ content !! 3
-     ; print $ "Hello4\n"
+     --; print $ "Hello4\n"
      ; pmp out $ content !! 4
-     ; print $ "Hello5\n"
+     --; print $ "Hello5\n"
      ; ptnp out $ content !! 5
      
      -- ; print $ content !! 4
@@ -204,6 +207,12 @@ errPrnt 8 = "Integer not in Range"
 errPrnt x = "Error while Parsing File"
 
 -- removeEmpties x = [ c | c <- x, length c /= 0]
+
+leastone args index = if (isInfixOf ('\n':'\n':(sections !! index)) (args) && (index < 6))
+       	    	         then leastone args (index + 1)
+			 else if (index == 6)
+			     then True
+			     else False
 
 ----------------------------------------------------------------------
 
