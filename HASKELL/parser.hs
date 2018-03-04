@@ -80,11 +80,17 @@ pass out content = do
 
 parseDriver out content = do
      { pname out $ content !! 0
+     --; print $ "Hello\n"
      ; pfpa out $ content !! 1
+     --; print $ "Hello\n"
      ; pfm out $ content !! 2
+     --; print $ "Hello\n"
      ; ptnt out $ content !! 3
+     ; print $ "Hello4\n"
      ; pmp out $ content !! 4
+     ; print $ "Hello5\n"
      ; ptnp out $ content !! 5
+     
      -- ; print $ content !! 4
      }
 -- print $ length $ content !! 0
@@ -144,7 +150,7 @@ rc' arg index verifier = if (index < (length arg) && ((patt $ arg !! index) == v
 				else False
 
 -- checks for neg and col length
-mprc args index = if index > 9
+mprc args index = if index > 8
      	  	     then 0
 		     else if (isInfixOf "-" $ args !! index)
                          then 6
