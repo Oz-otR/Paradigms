@@ -1,131 +1,47 @@
-main = putStrLn . show $ parseNode testArray 0 0 0
+import Data.Char
+import Data.List
 
-testArray = [[4,2,1],[-1,3,7],[2,-1,8]]
-testTNP = [[0,1,1],[1,0,1],[1,1,0]]
---testArray = [4,2,0]
+main = putStrLn . show $ parseNode testlist testTNP 0
 
--- Finds biggest number in a 2-D array
-parseNode :: (Num a, Ord a) => [[a]] -> a -> a -> a -> a
-parseNode array totalPen curTaskInd lastTaskInd
-    | remainingArray /= [] =
-        minimum [parseNode remainingArray (totalPen+penalty) curTaskInd lastTaskInd | penalty <- headArray, penalty /= -1]
-    | otherwise = parseLeaf headArray totalPen curTaskInd lastTaskInd
-    where   headArray:remainingArray = array
-            tnp = (testTNP !! curTaskInd) !! lastTaskInd
+testlist = [[0,2,-1],
+            [-1,1,0],
+            [1,0,-1]]
 
+testTNP =   [[0,0,-1],
+             [0,0,9],
+             [0,0,0]]
 
-parseLeaf :: (Num a, Ord a) => [a] -> a -> a -> a -> a
-parseLeaf array totalPen curTaskInd lastTaskInd = minimum (map (+totalPen) (filter (/= -1) array))
-    where headArray:remainingArray = array
 
+-- Finds biggest number in a 2-D list
+parseNode :: [[Int]] -> [[Int]] -> Int -> Int
+parseNode list tnplist totalPen
+    | taillist /= [] =
+        myMin [parseNode (safeAdd2DArr (editCols (-1) index taillist) (tnplist !! index)) tnplist (totalPen + (taskPenalty index)) | index <- [0..2], (taskPenalty index) /= -1]
+    | otherwise = parseLeaf headlist totalPen
+    where   newTaillist n = safeAdd2DArr taillist n  --adds TNP to head of tail list
+            taskPenalty n = (headlist !! n)
+            headlist:taillist = list
 
 
+--Takes a 2D list and adds a 1D list to it
+safeAdd2DArr :: [[Int]] -> [Int] -> [[Int]]
+safeAdd2DArr penlist tnplist = (safeAdd1DArr x tnplist):xs
+    where x:xs = penlist
 
+safeAdd1DArr :: [Int] -> [Int] -> [Int]
+safeAdd1DArr = zipWith $ \a b -> if a == -1 || b == -1  then -1 else a + b
 
+parseLeaf :: [Int] -> Int -> Int
+parseLeaf list totalPen  = myMin $ map (+totalPen) $ filter (/= -1) list 
+    where headlist:remaininglist = list
 
-{-
+editCol :: Int -> Int -> [Int] -> [Int]
+editCol n 0 (x:xs) = n:xs
+editCol n i (x:xs) = x:editCol n (i - 1) xs
 
+editCols :: Int -> Int -> [[Int]] -> [[Int]]
+editCols n i = map (editCol n i)
 
-main = putStrLn . show $ parseNode testArray 0 0 0
+myMin [] = maxBound :: Int
+myMin xs = minimum xs  
 
-testArray = [[4,2,1],[-1,3,7],[2,-1,8]]
-testTNP = [[0,1,1],[1,0,1],[1,1,0]]
---testArray = [4,2,0]
-
--- Finds biggest number in a 2-D array
-parseNode :: (Num a, Ord a) => [[a]] -> a -> a -> a -> a
-parseNode array totalPen curTaskInd lastTaskInd
-    | remainingArray /= [] = minimum 
-        [parseNode remainingArray (totalPen+penalty) curTaskInd lastTaskInd | penalty <- headArray, penalty /= -1]
-    | otherwise = parseLeaf headArray totalPen curTaskInd lastTaskInd
-    where headArray:remainingArray = array
-
-
-parseLeaf :: (Num a, Ord a) => [a] -> a -> a -> a -> a
-parseLeaf array totalPen curTaskInd lastTaskInd = minimum (map (+totalPen) (filter (/= -1) array))
-    where headArray:remainingArray = array
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- Finds biggest number in a 2-D array
-parseNode :: (Num a, Ord a) => [[a]] -> a -> a
-parseNode array totalPen
-    | array != [] = [parseNode remainingArray penalty | penalty <- headArray]
-    | otherwise = [parseLeaf remainingArray (totalPen+penalty) | penalty <- headArray]
-        where headArray:remainingArray = array
-
-parseLeaf :: (Num a, Ord a) => [a] -> a -> a
-parseLeaf array totalPen = 3
-    where headArray:remainingArray = array
-
-
-
-
-
-
-
-
--- Finds biggest number in a 2-D array
-parse :: (Num a, Ord a) => [[a]] -> a -> a
-parse array totalPen =
-    | null == array = [parseNode xs (totalPen+x) | x <- array]
-    | otherwise = [parseLeaf xs (totalPen+x) | x <- array]
-        where x:xs = array
-
-parse :: (Num a, Ord a) => [a] -> a
-parse array = maximum x
-    where x:xs = array
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- Finds biggest number in a 2-D array   (Works)
-parse :: (Num a, Ord a) => [[a]] -> a
-parse array = maximum [maximum x | x <- array]
-
-
-
-
---parse array depth biggest = foldl (\acc x -> if x > acc then acc = x else acc) biggest 
-
-
-
-parse :: (Num a) => [[a]] -> a -> a -> a
-parse array depth biggest = sum (map sum array)
-
-
-
-
-
-main = (putStrLn . show . parse) testArray
-
-testArray = [[4,2,0],[0,7,3],[-1,3,-1]]
-
-parse :: (Num a) => [[a]] -> a
-parse array = sum (map sum array)
--}
