@@ -4,6 +4,11 @@ import System.Exit
 import Data.List
 import Data.Char
 import Data.String
+import Data.Maybe
+import Data.Either
+import Text.Read
+import GHC.TypeLits
+import GHC.Exts
 
 main = do
     fileNames <- getArgs -- Obtain Arguments
@@ -19,44 +24,149 @@ main = do
     --let masterGrids = splashParse inputContents
     putStrLn "Hello, World!"
 
-{-}
-splashParse :: (Show txtIn) => [txtIn] -> Maybe JobGrid
-splashParse ("!!!":xs) = parseError xs
+{-
+splashParse :: [String] -> AObject -> Either AObject AGrid
+splashParse ("!!!":xs) = Left (ErObject "error" xs)
 splashParse (x:xs) =
-    case (dropWhileEnd isSpace x) of ("") -> splashParse xs
-        ("Name:") -> 
-        ("forced partial assignment:") ->
-        ("forbidden machine:") ->
-        ("too-near tasks:") ->
-        ("machine penalties:") ->
-        ("too-near penalities") ->
-        _ -> ["!!!", (errCode "inFault")]
- -}       
+    case (dropWhileEnd isSpace x) of
+        ("") -> splashParse xs
+        ("Name:") -> splashParse (vetName xs)
+        --("forced partial assignment:") ->
+        --("forbidden machine:") ->
+        --("too-near tasks:") ->
+        --("machine penalties:") ->
+        --("too-near penalities") ->
+        ("Correct") -> Right (MPGrid [1,1,1])
+        _ -> splashParse ["!!!", (errCode "inFault")]
+-}
 
---data MPGrid = [[Int]] deriving (Show)
---data TNGrid = [[Int]] deriving (Show)
+data AGrid = MPGrid Rowpiece | TNGrid Rowpiece deriving (Show)
+data Rowpiece = Rowpiece {  col :: [Int],
+                            prev :: Rowpiece,
+                            next :: Rowpiece } | Nullpiece deriving (Show)
 
---data TNObject = [Int]
+
+data AObject = MapObject {  row :: Int, 
+                            column :: Int, 
+                            score :: Int } | ErObject String deriving (Show)
             -- Describe transformation and assignment. always size of three: (task, task, score)
---data MPObject = MPObject Int Int Int
+
             -- Describe transformation and assignment. always size of three: (machine, task, score)
-            -- (_:_:(0>)): Penalty assignment flag.
-            -- (_:_:-255): FPA assignment flag, triggers function which maps -2
-            -- (_:_:-65535): Forbidden Square. Mapping -1 into this square triggers "fpa". Mapped as side effect to FPA or directly by FM.
+            -- (_:_:(0>): Penalty assignment flag.
+            -- (_:_:-1): FPA assignment, triggers function which maps -2
+            -- (_:_:-2): Forbidden Square. Mapping -1 into this square triggers "fpa". Mapped as side effect to FPA or directly by FM. (FM is parsed after FPA, thus it shouldn't matter.)
+            -- (_:_:-3): Triggers Invalid Penalty.
+            -- Others are execution states.
 
-vetName :: [String] -> [String]
-vetName ("#":x:xs) =
-    case (dropWhileEnd isSpace x) of "" ->  (case (dropWhileEnd isSpace (xs !! 0)) of 
-                                            "" -> vetName xs
-                                            "forced partial assignment:" -> xs
-                                            _ -> ["!!!", (errCode "inFault")])
-vetName (x:xs) = 
-    case y of "" -> vetName xs
-              y -> vetName (["#"] ++ xs)
-    where y = dropWhileEnd isSpace x
+-- Define newtype (alias), create smart constructor. Deriving Syntax
 
-parseError :: String -> IO ()
-parseError x = putStrLn x
+-- This set up allows text to be directly read using following context.
+-- readMaybe "MPObject (1,A)" :: IsObject
+-- readMaybe "TNObject (A,A)" :: IsObject
+-- readMaybe "FXObject (A,B,1)" :: IsObject
+data IsObject = MPObject (Int,Lexeme) | TNObject (Lexeme,Lexeme) | FXObject (Lexeme,Lexeme,Int) deriving (Read)
+data IsPenLine = PenLine Int Int Int Int Int Int Int Int deriving (Show, Read)
+
+instance Show IsObject where
+    show (MPObject (x, (Ident y))) = show (x,(tParse y))
+    show (TNObject ((Ident x), (Ident y))) = show ((tParse x),(tParse y))
+    show (FXObject ((Ident x), (Ident y), z)) = show ((tParse x),(tParse y),z)
+    show _ = show "Invalid"
+-- Before parsing, check if isSpace is element of the string.
+    -- object that looks like (1,"A") will trigger exception for both readEither and readMaybe.
+    -- Check '"', ',', and ' ' before applying readEither x :: Either String IsObject
+        -- ',' and ' ' returns Infault.
+        -- '"" should return nullMT.
+-- Special characters (Not letter or number) results in parse error (Which triggers infault by readEither)
+    -- Upon getting parse failure, Strip bracket and comma from x, then use isAlphaNum to determine if special characters were inputted as Machine or Task.
+
+{-
+-- file: ch06/eqclasses.hs
+instance Read Color where
+-- readsPrec
+ is the main function for parsing input
+readsPrec _ value =
+-- We pass tryParse a list of pairs. Each pair has a string
+-- and the desired return value. tryParse will try to match
+-- the input to one of these strings.
+tryParse [("Red", Red), ("Green", Green), ("Blue", Blue)]
+where tryParse [] = []
+-- If there is nothing left to try, fail
+tryParse ((attempt, result):xs) =
+-- Compare the start of the string to be parsed to the
+-- text we are looking for.
+if (take (length attempt) value) == attempt
+-- If we have a match, return the result and the
+-- remaining input
+then [(result, drop (length attempt) value)]
+-- If we don't have a match, try the next pair
+-- in the list of attempts.
+else tryParse xs
+-}
+
+
+{-
+gridMapper :: AObject -> AGrid -> Either AGrid AnError
+gridMapper (MPObject x y (-3)) (MPGrid grid) = 
+    let (left, right) = splitAt (8*x + y) grid
+    in MPGrid (left ++ [0] ++ (tail right))
+gridMapper (MPObject x y (-1)) (MPGrid grid) =  
+    case (grid !! 8*x+y) of -2 ->   splashParse ["!!!", (errCode "fpa")]
+                            _ ->    gridMapper (MPObject x y (-3)) (applyFPA x y (MPGrid grid))
+gridMapper (MPObject x y (-2)) (MPGrid grid) =  
+    let (left, right) = splitAt (8*x + y) grid
+    in MPGrid (left ++ [-2] ++ (tail right))
+-}
+
+-- readMaybe "MPObject (1,A)" :: Either String IsObject
+
+stripEOL :: String -> String
+stripEOL xline = dropWhileEnd isSpace xline
+
+checkBracket :: String -> String
+checkBracket x = 
+    case (head x, last x) of    ('(',')') -> x      -- was [init (tail x)] to strip bracket.
+                                _         -> "inFault"
+
+tParse :: String -> Int
+tParse x =
+    case x of   "A" -> 0
+                "B" -> 1
+                "C" -> 2
+                "D" -> 3
+                "E" -> 4
+                "F" -> 5
+                "G" -> 6
+                "H" -> 7
+                x   -> -1
+
+mParse :: String -> Int
+mParse x = 
+    case x of   "1" -> 0
+                "2" -> 1
+                "3" -> 2
+                "4" -> 3
+                "5" -> 4
+                "6" -> 5
+                "7" -> 6
+                "8" -> 7
+                x   -> -1
+
+pParse :: String -> Int
+pParse x =
+    case (isPenalty x) of   True -> read x :: Int
+                            False -> -1
+
+isPenalty :: String -> Bool
+isPenalty ""  = False
+isPenalty xs  =
+  case dropWhile isDigit xs of
+    ""       -> True
+    _        -> False
+
+
+parseError x = do
+    putStrLn x
 
 errCode :: String -> String
 errCode "inFault" = "Error while parsing input file"
@@ -67,58 +177,14 @@ errCode "nullT" = "invalid task"
 errCode "nullP" = "invalid penalty"
 errCode "noSol" = "No valid solution possible!"
 errCode x = "Invalid Error Called"
-errCode _ = "Missing Error Description"
 
-
-{-
-
-vetName :: (Show txtIn) => [txtIn] -> ([txtIn], Bool) -> [txtIn]
-vetName (x:xs) = 
-    case (dropWhileEnd isSpace x) of ("") -> vetName xs
-                                     _    -> vetName xs True
-vetName (x:xs) True =
-    case (dropWhileEnd isSpace x) of ("") ->  case (dropWhileEnd isSpace (xs !! 0)) of ("") -> vetName xs
-                                                                                    ("forced partial assignment:") -> xs
-                                                                                    _ -> parseError "inFault"
-
-
-splashFormat :: (Show txtIn) => [txtIn] -> [String]
-splashFormat [] = --Nothing?
-splashFormat (x:xs) = 
-
-
-
-lines                   :: String -> [String]
-lines ""                =  []
--- Somehow GHC doesn't detect the selector thunks in the below code,
--- so s' keeps a reference to the first line via the pair and we have
--- a space leak (cf. #4334).
--- So we need to make GHC see the selector thunks with a trick.
-lines s                 =  cons (case break (== '\n') s of
-                                    (l, s') -> (l, case s' of
-                                                    []      -> []
-                                                    _:s''   -> lines s''))
-  where
-    cons ~(h, t)        =  h : t
-
-
-wordsFB :: ([Char] -> b -> b) -> b -> String -> b
-wordsFB c n = go
-  where
-    go s = case dropWhile isSpace s of
-             "" -> n
-             s' -> w `c` go s''
-                   where (w, s'') = break isSpace s'
-
-
-dropWhileEnd :: (Char -> Bool) -> Text -> Text
-dropWhileEnd p t@(Text arr off len) = loop (len-1) len
-  where loop !i !l | l <= 0    = empty
-                   | p c       = loop (i+d) (l+d)
-                   | otherwise = Text arr off l
-            where (c,d)        = reverseIter t i
-
-strTrimEnd :: String -> String
-strTrimEnd (xs:x) =
-    case x of isSpace -> strTrimEnd xs
--}
+-- Minor modificated implementation [Prelude.list.lines], breaks up string based on comma.
+-- Source: https://hackage.haskell.org/package/base-4.10.1.0/docs/src/Data.OldList.html#lines
+comber :: String -> [String]
+comber "" =  []
+comber s  =  cons (case break (== ',') s of
+                    (l, s') -> (l, case s' of
+                                        []      -> []
+                                        _:s''   -> lines s''))
+        where
+            cons ~(h, t) =  h : t
