@@ -187,7 +187,7 @@ mprc args index = if index > 8
      	  	     then 0
 		     else if (isInfixOf "-" $ args !! index)
                          then 6
-		         else if ((countSpaces $ args !! index) == 7 && (length $ words $ (args !! index)) == 8)
+		         else if(not((countSpaces $ args !! index) == 7 && (length $ words $ (args !! index)) == 8))
 		             then 4
 			     else if(rnc 0 $ args !! index)
 			         then mprc args (index +1)
@@ -195,11 +195,11 @@ mprc args index = if index > 8
 -------------------------------------------------------------------------------------------
 
 rnc :: Int -> String -> Bool
-rnc index list = if (isInt ((words $ list) !! index) && index < 8)
-    	       	    then rnc (index + 1) list
-		    else if (index == 8)
-		    	then True
-			else False
+rnc index list = if (index == 8)
+    	       	    then True
+		    else if(isInt((words $ list) !! index))
+    	       	        then rnc (index + 1) list
+		        else False
 
 {-
 remove non number cahracters from a string
