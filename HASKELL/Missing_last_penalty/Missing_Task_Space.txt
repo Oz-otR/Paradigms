@@ -1,0 +1,23 @@
+Name:
+Missing_Task_Space
+
+forced partial assignment:
+(1, )
+
+forbidden machine:
+
+
+too-near tasks:
+
+
+machine penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 0 1 1 1
+1 1 0 1 1 1 1 1
+1 1 1 0 1 1 1 1
+1 1 1 1 1 0 1 1
+1 0 1 1 1 1 1 1
+0 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 0
+
+too-near penalities
