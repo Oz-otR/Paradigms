@@ -80,12 +80,12 @@ schedules out opList = do
     ;   let forceAppList = forceAssign matrixO (grabIntPair forced)
     ;   let finPenList = forbidAssign forceAppList (grabIntPair forbidden)
     ;   let zeroTNT = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
-    ;   let tnpList = tnpAssign zeroTNT (grabIntTriple tooPenal)
-    ;   let tntList = transpose (forbidAssign tnpList (grabIntPair tooTask))
-    ;   print matrixO
-    ;   print forceAppList
+    ;   let tnpList = changeValue zeroTNT (grabIntTriple tooPenal)
+    ;   let tntList = forbidAssign tnpList (grabIntPair tooTask)
+    --;   print matrixO
+    --;   print forceAppList
     ;   print finPenList
-    ;   print zeroTNT
+    --;   print zeroTNT
     ;   print tntList
     ;   let conclusion = outputFormat ((parseNode finPenList tntList currentPath 0))
     ;   putStrLn conclusion >> resultPrintOut out conclusion
@@ -711,17 +711,21 @@ modForbidList :: [Int] -> Int -> [Int]
 modForbidList oneDlist keepIndex = (take keepIndex oneDlist)++((-1):(drop (keepIndex+1) oneDlist))
 
 
-tnpAssign :: [[Int]] -> [(Int, Int, Int)] -> [[Int]]
-tnpAssign [] triples = []
-tnpAssign twoDlist triples = (newTnpList x triples (8-(length twoDlist))):(tnpAssign xs triples)
-    where x:xs = twoDlist
+--Change value
+--Changes 2D array to arbitrary values in tuple
+changeValue :: [[Int]] -> [(Int, Int, Int)] -> [[Int]]
+changeValue [] triples = []
+changeValue twoDlist triples = (newChangeList x triples (8-(length twoDlist))):(changeValue xs triples)
+    where   x:xs = twoDlist
 
---Change a list for all forbiden pairs
-newTnpList :: [Int] -> [(Int, Int, Int)] -> Int -> [Int]
-newTnpList oneDlist triples listIndex = foldl(\acc triples -> if ((trd1 triples) == listIndex) then (modTnpList oneDlist (trd2 triples) (trd3 triples)) else acc) oneDlist triples
+--Change a list for all change triples
+newChangeList :: [Int] -> [(Int, Int, Int)] -> Int -> [Int]
+newChangeList oneDlist triples listIndex = foldl(\acc trip -> if (trd1 trip == listIndex) then (modChangeList acc (trd2 trip) (trd3 trip)) else acc) oneDlist triples
 
-modTnpList :: [Int] -> Int -> Int -> [Int]
-modTnpList oneDlist keepIndex newPenalty = (take keepIndex oneDlist)++(newPenalty:(drop (keepIndex+1) oneDlist))
+
+--Returns a list with one element changed to arbitrary value
+modChangeList :: [Int] -> Int -> Int -> [Int]
+modChangeList oneDlist keepIndex newValue = (take keepIndex oneDlist)++(newValue:(drop (keepIndex+1) oneDlist))
 
 trd1 :: (a,b,c) -> a
 trd1 (x,y,z) = x
