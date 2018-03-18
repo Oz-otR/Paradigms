@@ -93,16 +93,23 @@ parseDriver out content = do
      ; ptnt out $ content !! 3
      ; pmp out $ content !! 4
      ; ptnp out $ content !! 5
-     ; print $ content !! 1
-     ; mapM_ print  $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 1)) --("1", "A") turned into (0, 0)
-     ; mapM_ print  $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 2)) --("1", "A") turned into (0, 0)
+     ; print $ content !! 3
+     --; mapM_ print  $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 1)) --("1", "A") turned into (0, 0)
+     --; mapM_ print  $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 2)) --("1", "A") turned into (0, 0)
+     ; mapM_ print  $map lefttaskToCoord $ map righttaskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 3))
      ; let splitByWords = mapByWord $ content !! 4
      ; let (_:end) = splitByWords
      ; let penList = mapFullToInt end
  --    ; mapM_ print $ forceAssign penList $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 1))
      ; let forceAppList = forceAssign penList $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 1))
      ; let finPenList = forbidAssign forceAppList $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 2))
-     ; putStrLn . show $ (parseNode finPenList testTNP currentPath 0) --Prints lowest penalty of search
+     ; let tntList = forbidAssign tnList $map lefttaskToCoord $ map righttaskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 3))
+     ; mapM_ print forceAppList
+     ; putStrLn "\n"
+     ; mapM_ print finPenList
+     ; putStrLn "\n"
+     ; mapM_ print tntList
+     ; putStrLn . show $ (parseNode finPenList tntList currentPath 0) --Prints lowest penalty of search
      }
 
 mapByWord :: [String] -> [[String]]
@@ -315,6 +322,31 @@ taskToCoord (s,y)
     |  (s,"F") == (s,y) = (read s -1, 5)
     |  (s,"G") == (s,y) = (read s -1, 6)
     | otherwise = (read s -1, 7)
+
+-- right side task to coord
+righttaskToCoord :: (String, String) -> (String, Int)
+righttaskToCoord (s,y)
+    |  (s,"A") == (s,y) = (s, 0)
+    |  (s,"B") == (s,y) = (s, 1)
+    |  (s,"C") == (s,y) = (s, 2)
+    |  (s,"D") == (s,y) = (s, 3)
+    |  (s,"E") == (s,y) = (s, 4)
+    |  (s,"F") == (s,y) = (s, 5)
+    |  (s,"G") == (s,y) = (s, 6)
+    | otherwise = (s, 7)
+
+-- left side task to coord
+lefttaskToCoord :: (String, Int) -> (Int, Int)
+lefttaskToCoord (s,y)
+    |  ("A",y) == (s,y) = (0,y)
+    |  ("B",y) == (s,y) = (1,y)
+    |  ("C",y) == (s,y) = (2,y)
+    |  ("D",y) == (s,y) = (3,y)
+    |  ("E",y) == (s,y) = (4,y)
+    |  ("F",y) == (s,y) = (5,y)
+    |  ("G",y) == (s,y) = (6,y)
+    | otherwise = (7,y)
+
 {-Logic now works for 8x8 currenttly-}
 
 testlist = [[0,0,0,0,0,0,0,0],
@@ -335,7 +367,7 @@ testTNP =  [[0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0],
-            [1,3,3,4,5,6,7,8]]
+            [0,0,0,0,0,0,0,0]]
 
 currentPath = []
 worstPath = [[0,0,0,0,0,0,0,0],[maxBound :: Int]]
@@ -384,11 +416,11 @@ editCols n i = map (editCol n i)
 forceAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
 forceAssign [] pairs = []
 forceAssign twoDlist pairs = (newForceList x pairs (8-(length twoDlist))):(forceAssign xs pairs)
-    where x:xs = twoDlist 
+    where x:xs = twoDlist
 
 --Change a list for all forced pairs
 newForceList :: [Int] -> [(Int, Int)] -> Int -> [Int]
-newForceList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modList oneDlist (snd(pair))) else acc) oneDlist pairs
+newForceList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modList acc (snd(pair))) else acc) oneDlist pairs
 
 --Returns a list with one element the same and -1s everywhere else
 modList :: [Int] -> Int -> [Int]
@@ -400,39 +432,16 @@ modList oneDlist keepIndex = (replicate keepIndex (-1))++((oneDlist !! keepIndex
 forbidAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
 forbidAssign [] pairs = []
 forbidAssign twoDlist pairs = (newForbidList x pairs (8-(length twoDlist))):(forbidAssign xs pairs)
-    where x:xs = twoDlist 
+    where x:xs = twoDlist
 
 --Change a list for all forbiden pairs
 newForbidList :: [Int] -> [(Int, Int)] -> Int -> [Int]
-newForbidList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modForbidList oneDlist (snd(pair))) else acc) oneDlist pairs
+newForbidList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modForbidList acc (snd(pair))) else acc) oneDlist pairs
 
 --Returns a list with one element changed to -1
 modForbidList :: [Int] -> Int -> [Int]
 modForbidList oneDlist keepIndex = (take keepIndex oneDlist)++((-1):(drop (keepIndex+1) oneDlist))
 
-
-
--- applyFA :: (Int, Int) -> [[Int]] -> [[Int]]
--- applyFA coord mpList = mplist !! fst coord
-
-
-
--- saveElem :: (Int, Int) -> Int
--- saveElem (x,y) = mineditCols -1 snd(x)
--- let entry = penList !! snd(x) !! fst(x)
-
-replace :: Int -> Int -> [Int] -> [Int]
-replace i 0 (x:xs) = i:xs
-replace i n (x:xs) = x:replace i (n-1) xs
-{-
-setFA :: (Int, Int) -> [[Int]] -> [[Int]]
-setFA l xs = row_to_replace_in = xs !! fst(l)
-             modified_row = replace -1 snd(l) row_to_replace_in
-             -}
---x = row
---i = column to be changed
--- n = value to
--- returns a string to be printed
 errPrnt :: Int -> String
 errPrnt 0 = "File Not Found"
 errPrnt 1 = "Wrong Number of Arguments"
