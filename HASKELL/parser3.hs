@@ -93,6 +93,7 @@ schedules out opList = do
     }
 
 outputFormat :: [[Int]] -> String
+outputFormat [[0,0,0,0,0,0,0,0], y] = "No valid solution possible!"
 outputFormat [x,[y]] =
     ("Solution " ++ (reParse (x !! 0)) ++ "  " ++ (reParse (x !! 1)) ++ "  " ++ (reParse (x !! 2)) ++ "  " ++ (reParse (x !! 3)) ++ "  " ++ (reParse (x !! 4)) ++ "  " ++ (reParse (x !! 5)) ++ "  " ++ (reParse (x !! 6)) ++ "  " ++ (reParse (x !! 7)) ++ " ; Quality: " ++ (show y))
 
