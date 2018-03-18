@@ -3,9 +3,9 @@ import Data.List
 
 main = putStrLn . show $ (parseNode testlist testTNP currentPath 0)  --Prints lowest penalty of search
 
-testlist = [[1,1,2],
-            [1,1,1],
-            [1,1,2]]
+testlist = [[1,2,2],
+            [2,2,1],
+            [2,0,2]]
 
 testTNP =   [[0,0,0],
              [0,0,0],
@@ -30,7 +30,7 @@ parseNode list tnplist currentPath totalPen
 
 --Assembles the leaf information into [[path][pen]]
 assembleLeaf :: [Int] -> Int -> [[Int]]
-assembleLeaf currentPath totalPen  = (currentPath:[[totalPen]])
+assembleLeaf currentPath totalPen  = ((reverse currentPath):[[totalPen]])
 
 
 returnLowPen :: [[[Int]]] -> [[Int]]
