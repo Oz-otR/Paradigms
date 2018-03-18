@@ -7,6 +7,7 @@ import Data.String
 import Data.Maybe
 import Data.Either
 import Text.Read
+import Text.Read.Lex
 import GHC.TypeLits
 import GHC.Exts
 
@@ -20,9 +21,20 @@ main = do
             tempHolder <- hGetContents fileHandle
             let inputContents = lines tempHolder
             hClose fileHandle
-
+    
+    
+    let establish = rowEstablish 1 Nullpiece
     --let masterGrids = splashParse inputContents
     putStrLn "Hello, World!"
+
+
+--splashParse :: [String] ->  -> AGrid
+--splashParse ()
+
+rowEstablish :: Int -> Rowpiece -> Rowpiece
+rowEstablish x Nullpiece = rowEstablish (x+1) (Rowpiece [0,0,0,0,0,0,0,0] Nullpiece)
+rowEstablish 8 (Rowpiece a next) = Rowpiece a next
+rowEstablish x (Rowpiece a next) = Rowpiece a (rowEstablish (x+1) next)
 
 {-
 splashParse :: [String] -> AObject -> Either AObject AGrid
@@ -40,10 +52,8 @@ splashParse (x:xs) =
         _ -> splashParse ["!!!", (errCode "inFault")]
 -}
 
-data AGrid = MPGrid Rowpiece | TNGrid Rowpiece deriving (Show)
-data Rowpiece = Rowpiece {  col :: [Int],
-                            prev :: Rowpiece,
-                            next :: Rowpiece } | Nullpiece deriving (Show)
+data AGrid = GridPart Rowpiece Rowpiece deriving (Show)
+data Rowpiece = Rowpiece [Int] Rowpiece | Nullpiece deriving (Show, Eq)
 
 
 data AObject = MapObject {  row :: Int, 
@@ -64,21 +74,24 @@ data AObject = MapObject {  row :: Int,
 -- readMaybe "MPObject (1,A)" :: IsObject
 -- readMaybe "TNObject (A,A)" :: IsObject
 -- readMaybe "FXObject (A,B,1)" :: IsObject
-data IsObject = MPObject (Int,Lexeme) | TNObject (Lexeme,Lexeme) | FXObject (Lexeme,Lexeme,Int) deriving (Read)
+data IsObject = MPObject (Lexeme,Lexeme) | TNObject (Lexeme,Lexeme) | FXObject (Lexeme,Lexeme,Int) deriving (Read)
 data IsPenLine = PenLine Int Int Int Int Int Int Int Int deriving (Show, Read)
 
 instance Show IsObject where
-    show (MPObject (x, (Ident y))) = show (x,(tParse y))
+    show (MPObject (Number x, Ident y)) =
+        let out = numberToInteger x
+        in case out of  (Just x) -> show (x,y)
+                        Nothing  -> show (-1,-1)
     show (TNObject ((Ident x), (Ident y))) = show ((tParse x),(tParse y))
     show (FXObject ((Ident x), (Ident y), z)) = show ((tParse x),(tParse y),z)
     show _ = show "Invalid"
--- Before parsing, check if isSpace is element of the string.
+-- Before parsing, check if isSpace is element of the string. (After eol strip)
     -- object that looks like (1,"A") will trigger exception for both readEither and readMaybe.
-    -- Check '"', ',', and ' ' before applying readEither x :: Either String IsObject
-        -- ',' and ' ' returns Infault.
-        -- '"" should return nullMT.
--- Special characters (Not letter or number) results in parse error (Which triggers infault by readEither)
-    -- Upon getting parse failure, Strip bracket and comma from x, then use isAlphaNum to determine if special characters were inputted as Machine or Task.
+    -- So check '"', ',', and ' ' before applying readEither x :: Either String IsObject
+        -- If any of them are found, returns Infault. (Diff, " is captured as infault instead of nullMT)
+-- Special characters (Not letter or number) should be shown with (Symbol x)
+-- Numbers should be shown with (MkDecimal x)
+-- characters were inputted as Machine or Task.
 
 {-
 -- file: ch06/eqclasses.hs
