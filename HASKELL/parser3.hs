@@ -181,7 +181,7 @@ parseDriver out content = do
 
 grabIntList :: [IsObject] -> [[Int]]
 grabIntList [] = []
-grabIntList (x:xs) = [(read (show x) :: [Int])] ++ grabIntList xs
+grabIntList (x:xs) = [(read (show x) :: [Int])] ++ (grabIntList xs)
 
 grabIntPair :: [IsObject] -> [(Int, Int)]
 grabIntPair [] = []
@@ -592,53 +592,6 @@ reParse x =
                 7 -> "H"
                 x -> "?"
 
-
-tupleFuckery :: [[Char]] -> [[Char]]
-tupleFuckery s = map splitTuple tail
-    where head:tail = s
-parseTuple = repl ' ' ','
-
-splitTuple :: [Char] -> [Char]
-splitTuple s = map parseTuple [ c| c <- s, c/=')' && c /= '(']
-
-repl :: Char -> Char -> Char -> Char
-repl c' c s = if s == c then c' else s
-
-listToTuple :: [a] -> (a,a) -- [a,b] -> (a,b)
-listToTuple (x:y:xs) = (x,y)
-
-taskToCoord :: (String, String) -> (Int, Int)
-taskToCoord (s,y)
-    |  (s,"A") == (s,y) = (read s - 1, 0)
-    |  (s,"B") == (s,y) = (read s - 1, 1)
-    |  (s,"C") == (s,y) = (read s - 1, 2)
-    |  (s,"D") == (s,y) = (read s -1 , 3)
-    |  (s,"E") == (s,y) = (read s -1, 4)
-    |  (s,"F") == (s,y) = (read s -1, 5)
-    |  (s,"G") == (s,y) = (read s -1, 6)
-    | otherwise = (read s -1, 7)
-{-Logic now works for 8x8 currenttly-}
-
-testlist = [[0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0]]
-
-
-
-testTNP =  [[0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [1,3,3,4,5,6,7,8]]
-
 currentPath = []
 worstPath = [[0,0,0,0,0,0,0,0],[maxBound :: Int]]
 
@@ -682,33 +635,23 @@ editCol n i (x:xs) = x:editCol n (i - 1) xs
 editCols :: Int -> Int -> [[Int]] -> [[Int]]
 editCols n i = map (editCol n i)
 
---Changes 2D array to reflect forced assignments
+--Forced Assignment
+--Changes 2D array to reflect forced assignments as a -1
 forceAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
 forceAssign [] pairs = []
 forceAssign twoDlist pairs = (newForceList x pairs (8-(length twoDlist))):(forceAssign xs pairs)
-    where x:xs = twoDlist 
+    where x:xs = twoDlist
+
 
 --Change a list for all forced pairs
 newForceList :: [Int] -> [(Int, Int)] -> Int -> [Int]
-newForceList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modList oneDlist (snd(pair))) else acc) oneDlist pairs
+newForceList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modList acc (snd(pair))) else acc) oneDlist pairs
+
+
 
 --Returns a list with one element the same and -1s everywhere else
 modList :: [Int] -> Int -> [Int]
-modList oneDlist keepIndex = (replicate keepIndex (-1))++((oneDlist !! keepIndex):(replicate (8-keepIndex) (-1)))
-
---Changes 2D array to reflect forbiden assignments
-forbidAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
-forbidAssign [] pairs = []
-forbidAssign twoDlist pairs = (newForbidList x pairs (8-(length twoDlist))):(forbidAssign xs pairs)
-    where x:xs = twoDlist 
-
---Change a list for all forbiden pairs
-newForbidList :: [Int] -> [(Int, Int)] -> Int -> [Int]
-newForbidList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modForbidList oneDlist (snd(pair))) else acc) oneDlist pairs
-
---Returns a list with one element changed to -1
-modForbidList :: [Int] -> Int -> [Int]
-modForbidList oneDlist keepIndex = (take keepIndex oneDlist)++((-1):(drop (keepIndex+1) oneDlist))
+modList oneDlist keepIndex = (replicate keepIndex (-1))++((oneDlist !! keepIndex):(replicate (7-keepIndex) (-1)))
 
 
 --Change value
@@ -726,6 +669,23 @@ newChangeList oneDlist triples listIndex = foldl(\acc trip -> if (trd1 trip == l
 --Returns a list with one element changed to arbitrary value
 modChangeList :: [Int] -> Int -> Int -> [Int]
 modChangeList oneDlist keepIndex newValue = (take keepIndex oneDlist)++(newValue:(drop (keepIndex+1) oneDlist))
+
+--Forbidden Assignments
+--Changes 2D array to reflect forbidden assignments
+forbidAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
+forbidAssign [] pairs = []
+forbidAssign twoDlist pairs = (newForbidList x pairs (8-(length twoDlist))):(forbidAssign xs pairs)
+    where x:xs = twoDlist
+
+
+--Change a list for all forbidden pairs
+newForbidList :: [Int] -> [(Int, Int)] -> Int -> [Int]
+newForbidList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modForbidList acc (snd(pair))) else acc) oneDlist pairs
+
+
+--Returns a list with one element changed to -1
+modForbidList :: [Int] -> Int -> [Int]
+modForbidList oneDlist keepIndex = (take keepIndex oneDlist)++((-1):(drop (keepIndex+1) oneDlist))
 
 trd1 :: (a,b,c) -> a
 trd1 (x,y,z) = x
