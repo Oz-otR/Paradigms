@@ -7,7 +7,6 @@ import Data.List
 import Data.Maybe
 import Data.Char
 import Text.Read
-import SplashPrinter
 
 
 tnList  =   [[0,0,0,0,0,0,0,0],
@@ -111,7 +110,6 @@ parseDriver out content = do
      ; mapM_ print tntList
      ; print finPenList
      ; putStrLn . show $ (parseNode finPenList tntPens currentPath 0) --Prints lowest penalty of search
-     ;
      }
 
 mapByWord :: [String] -> [[String]]
