@@ -64,25 +64,57 @@ pass out content = do
     let theGrid = GridPart (rowEstablish 1 (Rowpiece [0] Nullpiece)) (rowEstablish 1 (Rowpiece [0] Nullpiece))
     let parsedGrid = parseDriver 0 blocks [] -- print blocks to view the list
     case (last parsedGrid) of   (Err x) -> errorPrintOut out (errPrnt x) >> exitFailure
-                                _ -> putStrLn "Congrats"
+                                _ -> schedules out parsedGrid
                                     --parsedGrid overMapping
     -- Catch error here.
-    
-{-
-pass :: p -> [Char] -> IO ()
-pass out content = do
-     { if not(leastone (filter (/= '\r') content) 1)
-          then putStrLn (errPrnt 10) >> exitFailure
-        else return()
-     ; let pruned = removeEmpties $ lines $ filter (/= '\r') content
-     ; let index = getIn 0 pruned
-     ; if not(sorted index && not ((-1) `elem` index))
-          then putStrLn (errPrnt 10) >> exitFailure
-      else return ()
-     ; let blocks = reverse $ splt 5 pruned index
-     ; parseDriver out blocks -- print blocks to view the list
-     }
-     -}
+
+schedules :: [Char] -> [IsObject] -> IO ()
+schedules out opList = do
+    {
+    ;   let forced = lexcon opList "FA"
+    ;   let forbidden = lexcon opList "FM"
+    ;   let tooTask = lexcon opList "TNT"
+    ;   let tooPenal = lexcon opList "TNP"
+    ;   let matrixBase = lexcon opList "MP"
+    ;   let matrixO = grabIntList matrixBase
+    ;   let forceAppList = forceAssign matrixO (grabIntPair forced)
+    ;   let finPenList = forbidAssign forceAppList (grabIntPair forbidden)
+    ;   let zeroTNT = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
+    ;   let tntList = forbidAssign zeroTNT (grabIntPair tooTask)
+    ;   let tnList = transpose (tnpAssign tntList (grabIntTriple tooPenal))
+    ;   print matrixO
+    ;   print forceAppList
+    ;   print finPenList
+    ;   print zeroTNT
+    ;   print tntList
+    ;   print tnList
+    ;   let conclusion = outputFormat ((parseNode finPenList tnList currentPath 0))
+    ;   putStrLn conclusion >> resultPrintOut out conclusion
+    --;   putStrLn "Something"
+    }
+
+outputFormat :: [[Int]] -> String
+outputFormat [x,[y]] =
+    ("Solution " ++ (reParse (x !! 0)) ++ "  " ++ (reParse (x !! 1)) ++ "  " ++ (reParse (x !! 2)) ++ "  " ++ (reParse (x !! 3)) ++ "  " ++ (reParse (x !! 4)) ++ "  " ++ (reParse (x !! 5)) ++ "  " ++ (reParse (x !! 6)) ++ "  " ++ (reParse (x !! 7)) ++ " ; Quality: " ++ (show y))
+
+lexcon :: [IsObject] -> [Char] -> [IsObject]
+lexcon [] y = []
+lexcon ((FA x):xs) y = case y of
+    "FA"    -> [(FA x)] ++ (lexcon xs y)
+    y       -> lexcon xs y
+lexcon ((FM x):xs) y = case y of
+    "FM"    -> [(FM x)] ++ (lexcon xs y)
+    y       -> lexcon xs y
+lexcon ((TNT x):xs) y = case y of
+    "TNT"    -> [(TNT x)] ++ (lexcon xs y)
+    y       -> lexcon xs y
+lexcon ((TNP x):xs) y = case y of
+    "TNP"    -> [(TNP x)] ++ (lexcon xs y)
+    y       -> lexcon xs y
+lexcon (x:xs) y = case y of
+    "MP"    -> [x] ++ (lexcon xs y)
+    y       -> lexcon xs y
+
 {-
 takes the out stream and a list of strings to parse
 sends each section off to their parsers
@@ -148,14 +180,17 @@ parseDriver out content = do
      }
 -}
 
-mapByWord :: [String] -> [[String]]
-mapByWord l = map words l
-mapToInt :: [String] -> [Int]
-mapToInt l = map read l
-mapFullToInt :: [[String]] -> [[Int]]
-mapFullToInt l = do
-  w <- l
-  return $ mapToInt w
+grabIntList :: [IsObject] -> [[Int]]
+grabIntList [] = []
+grabIntList (x:xs) = [(read (show x) :: [Int])] ++ grabIntList xs
+
+grabIntPair :: [IsObject] -> [(Int, Int)]
+grabIntPair [] = []
+grabIntPair (x:xs) = [(read (show x) :: (Int, Int))] ++ grabIntPair xs
+
+grabIntTriple :: [IsObject] -> [(Int, Int, Int)]
+grabIntTriple [] = []
+grabIntTriple (x:xs) = [(read (show x) :: (Int, Int, Int))] ++ grabIntTriple xs
 
 -- Just triggers errPrnt 10, nothing else.
 inFault :: [Char] -> IO ()
@@ -309,6 +344,7 @@ leastone args index = if (isInfixOf ('\n':'\n':(sections !! index)) (args) && (i
              else if (index == 6)
                  then True
                  else False
+
 -- returns a string to be printed
 errPrnt :: Int -> String
 errPrnt 0 = "File Not Found"
@@ -518,12 +554,13 @@ data AObject = MapObject {  row :: Int,
 -- readMaybe "FXObject (A,B,1)" :: IsObject
 data IsObject = FA (Int,Lexeme) | FM (Int,Lexeme) | TNT (Lexeme,Lexeme) | TNP (Lexeme,Lexeme,Int) | Err Int | MP Int Int Int Int Int Int Int Int deriving (Read)
 
+
 instance Show IsObject where
     show (FA (x, Ident y)) = show ((x-1),(tParse y))
     show (FM (x, Ident y)) = show ((x-1),(tParse y))
     show (TNT ((Ident x), (Ident y))) = show ((tParse x),(tParse y))
     show (TNP ((Ident x), (Ident y), z)) = show ((tParse x),(tParse y),z)
-    show (MP a b c d e f g h)   = show (a,b,c,d,e,f,g,h)
+    show (MP a b c d e f g h)   = show [a,b,c,d,e,f,g,h]
     show _ = show "Invalid"
 
 tParse :: String -> Int
@@ -537,3 +574,171 @@ tParse x =
                 "G" -> 6
                 "H" -> 7
                 x   -> -1
+
+reParse :: Int -> String
+reParse x =
+    case x of   0 -> "A"
+                1 -> "B"
+                2 -> "C"
+                3 -> "D"
+                4 -> "E"
+                5 -> "F"
+                6 -> "G"
+                7 -> "H"
+                x -> "?"
+
+
+tupleFuckery :: [[Char]] -> [[Char]]
+tupleFuckery s = map splitTuple tail
+    where head:tail = s
+parseTuple = repl ' ' ','
+
+splitTuple :: [Char] -> [Char]
+splitTuple s = map parseTuple [ c| c <- s, c/=')' && c /= '(']
+
+repl :: Char -> Char -> Char -> Char
+repl c' c s = if s == c then c' else s
+
+listToTuple :: [a] -> (a,a) -- [a,b] -> (a,b)
+listToTuple (x:y:xs) = (x,y)
+
+taskToCoord :: (String, String) -> (Int, Int)
+taskToCoord (s,y)
+    |  (s,"A") == (s,y) = (read s - 1, 0)
+    |  (s,"B") == (s,y) = (read s - 1, 1)
+    |  (s,"C") == (s,y) = (read s - 1, 2)
+    |  (s,"D") == (s,y) = (read s -1 , 3)
+    |  (s,"E") == (s,y) = (read s -1, 4)
+    |  (s,"F") == (s,y) = (read s -1, 5)
+    |  (s,"G") == (s,y) = (read s -1, 6)
+    | otherwise = (read s -1, 7)
+{-Logic now works for 8x8 currenttly-}
+
+testlist = [[0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0]]
+
+
+
+testTNP =  [[0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [1,3,3,4,5,6,7,8]]
+
+currentPath = []
+worstPath = [[0,0,0,0,0,0,0,0],[maxBound :: Int]]
+
+
+-- Finds biggest number in a 2-D list
+parseNode :: [[Int]] -> [[Int]] -> [Int] -> Int -> [[Int]]
+parseNode list tnplist currentPath totalPen
+    | taillist /= [] =
+        returnLowPen [parseNode (safeAdd2DLst (editCols (-1) index taillist) (tnplist !! index)) tnplist  (addToPath index) (totalPen + (headlist !! index)) | index <- [0..7], (headlist !! index) /= -1]
+    | otherwise = returnLowPen [assembleLeaf (addToPath index) (addFirstTNP index) | index <- [0..7], (headlist !! index) /= -1]
+    where   newTaillist n = safeAdd2DLst taillist n  --adds TNP to head of tail list
+            headlist:taillist = list
+            addToPath n = n:currentPath
+            addFirstTNP n = (totalPen + (safeAdd1DLst headlist (tnplist !! (currentPath !! 0))) !! n)
+
+
+--Assembles the leaf information into [[path][pen]]
+assembleLeaf :: [Int] -> Int -> [[Int]]
+assembleLeaf currentPath totalPen  = ((reverse currentPath):[[totalPen]])
+
+
+returnLowPen :: [[[Int]]] -> [[Int]]
+returnLowPen list = foldl(\acc leaf -> if (acc !! 1) < (leaf !! 1) then acc else leaf) worstPath list   --acc is a single 2D array leaf information packet [[path][pen]]
+
+
+--Takes a 2D list and adds a 1D list to it except for -1s
+safeAdd2DLst :: [[Int]] -> [Int] -> [[Int]]
+safeAdd2DLst penlist tnplist = (safeAdd1DLst x tnplist):xs
+    where x:xs = penlist
+
+
+safeAdd1DLst :: [Int] -> [Int] -> [Int]
+safeAdd1DLst = zipWith $ \a b -> if a == -1 || b == -1  then -1 else a + b
+
+
+--Changes the value for an entire column of a 2d array to selected value
+editCol :: Int -> Int -> [Int] -> [Int]
+editCol n 0 (x:xs) = n:xs
+editCol n i (x:xs) = x:editCol n (i - 1) xs
+
+editCols :: Int -> Int -> [[Int]] -> [[Int]]
+editCols n i = map (editCol n i)
+
+--Changes 2D array to reflect forced assignments
+forceAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
+forceAssign [] pairs = []
+forceAssign twoDlist pairs = (newForceList x pairs (8-(length twoDlist))):(forceAssign xs pairs)
+    where x:xs = twoDlist 
+
+--Change a list for all forced pairs
+newForceList :: [Int] -> [(Int, Int)] -> Int -> [Int]
+newForceList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modList oneDlist (snd(pair))) else acc) oneDlist pairs
+
+--Returns a list with one element the same and -1s everywhere else
+modList :: [Int] -> Int -> [Int]
+modList oneDlist keepIndex = (replicate keepIndex (-1))++((oneDlist !! keepIndex):(replicate (8-keepIndex) (-1)))
+
+
+
+--Changes 2D array to reflect forbiden assignments
+forbidAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
+forbidAssign [] pairs = []
+forbidAssign twoDlist pairs = (newForbidList x pairs (8-(length twoDlist))):(forbidAssign xs pairs)
+    where x:xs = twoDlist 
+
+--Change a list for all forbiden pairs
+newForbidList :: [Int] -> [(Int, Int)] -> Int -> [Int]
+newForbidList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == listIndex) then (modForbidList oneDlist (snd(pair))) else acc) oneDlist pairs
+
+--Returns a list with one element changed to -1
+modForbidList :: [Int] -> Int -> [Int]
+modForbidList oneDlist keepIndex = (take keepIndex oneDlist)++((-1):(drop (keepIndex+1) oneDlist))
+
+
+tnpAssign :: [[Int]] -> [(Int, Int, Int)] -> [[Int]]
+tnpAssign [] triples = []
+tnpAssign twoDlist triples = (newTnpList x triples (8-(length twoDlist))):(tnpAssign xs triples)
+    where x:xs = twoDlist
+
+--Change a list for all forbiden pairs
+newTnpList :: [Int] -> [(Int, Int, Int)] -> Int -> [Int]
+newTnpList oneDlist triples listIndex = foldl(\acc triples -> if (trd1(triples) == listIndex) then (modTnpList oneDlist (trd2(triples)) (trd3(triples))) else acc) oneDlist triples
+
+modTnpList :: [Int] -> Int -> Int -> [Int]
+modTnpList oneDlist keepIndex newPenalty = (take keepIndex oneDlist)++(newPenalty:(drop (keepIndex+1) oneDlist))
+
+trd1 :: (a,b,c) -> a
+trd1 (x,y,z) = x
+
+trd2 :: (a,b,c) -> b
+trd2 (x,y,z) = y
+
+trd3 :: (a,b,c) -> c
+trd3 (x,y,z) = z
+
+
+-- applyFA :: (Int, Int) -> [[Int]] -> [[Int]]
+-- applyFA coord mpList = mplist !! fst coord
+
+
+
+-- saveElem :: (Int, Int) -> Int
+-- saveElem (x,y) = mineditCols -1 snd(x)
+-- let entry = penList !! snd(x) !! fst(x)
+
+replace :: Int -> Int -> [Int] -> [Int]
+replace i 0 (x:xs) = i:xs
+replace i n (x:xs) = x:replace i (n-1) xs
