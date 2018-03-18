@@ -377,12 +377,12 @@ worstPath = [[0,0,0,0,0,0,0,0],[maxBound :: Int]]
 parseNode :: [[Int]] -> [[Int]] -> [Int] -> Int -> [[Int]]
 parseNode list tnplist currentPath totalPen
     | taillist /= [] =
-        returnLowPen [parseNode (safeAdd2DLst (editCols (-1) index taillist) (tnplist !! index)) tnplist  (addToPath index) (totalPen + (headlist !! index)) | index <- [0..7], (headlist !! index) /= -1]
-    | otherwise = returnLowPen [assembleLeaf (addToPath index) (addFirstTNP index) | index <- [0..7], (headlist !! index) /= -1]
+        returnLowPen [parseNode (safeAdd2DLst (editCols (-1) index taillist) (tnplist !! index)) tnplist  (addToPath index) (totalPen + (headlist !! index)) | index <- [0..2], (headlist !! index) /= (-1)]
+    | otherwise = returnLowPen [assembleLeaf (addToPath index) ((addFirstTNP index) + (headlist !! index)) | index <- [0..2], (headlist !! index) /= -1, ((tnplist !! index) !! (currentPath !! 0)) /= (-1)]
     where   newTaillist n = safeAdd2DLst taillist n  --adds TNP to head of tail list
             headlist:taillist = list
-            addToPath n = n:currentPath
-            addFirstTNP n = (totalPen + (safeAdd1DLst headlist (tnplist !! (currentPath !! 0))) !! n)
+            addToPath n = currentPath++[n]
+            addFirstTNP n = (totalPen + ((tnplist !! n) !! (currentPath !! 0)))
 
 
 --Assembles the leaf information into [[path][pen]]
