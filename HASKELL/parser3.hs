@@ -80,15 +80,14 @@ schedules out opList = do
     ;   let forceAppList = forceAssign matrixO (grabIntPair forced)
     ;   let finPenList = forbidAssign forceAppList (grabIntPair forbidden)
     ;   let zeroTNT = [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]
-    ;   let tntList = forbidAssign zeroTNT (grabIntPair tooTask)
-    ;   let tnList = transpose (tnpAssign tntList (grabIntTriple tooPenal))
+    ;   let tnpList = tnpAssign zeroTNT (grabIntTriple tooPenal)
+    ;   let tntList = transpose (forbidAssign tnpList (grabIntPair tooTask))
     ;   print matrixO
     ;   print forceAppList
     ;   print finPenList
     ;   print zeroTNT
     ;   print tntList
-    ;   print tnList
-    ;   let conclusion = outputFormat ((parseNode finPenList tnList currentPath 0))
+    ;   let conclusion = outputFormat ((parseNode finPenList tntList currentPath 0))
     ;   putStrLn conclusion >> resultPrintOut out conclusion
     --;   putStrLn "Something"
     }
@@ -379,7 +378,9 @@ buildOps arg index verifier opList =
     let newDex = if index == (length arg)
                     then (index-1)
                     else index
-        target = isItOtherError (comber (stripBracket (arg !! newDex))) verifier
+        target = if theresError opList
+                    then 2
+                    else isItOtherError (comber (stripBracket (arg !! newDex))) verifier
     in  if (index < (length arg) && (0 == target))
             then buildOps arg (index + 1) verifier (lexOps opList (arg !! index) verifier)
             else if index == length arg
@@ -400,6 +401,9 @@ fpaConflict (FA (a,b)) ((FA (x,y)):xs)
     | a == x    = True
     | b == y    = True
     | otherwise = fpaConflict (FA (a,b)) xs
+    -- | a == x    = letError xs 2
+  --  | b == y    = letError xs 2
+--    | otherwise = [x] ++ (fpaConflict (FA (a,b)) xs)
 
 -- Look for letter starting texts to set up the indexes, 0 and 1 should be Name: and corresponding name string.
 divIn :: Int -> [[Char]] -> [Int]
@@ -561,6 +565,7 @@ instance Show IsObject where
     show (TNT ((Ident x), (Ident y))) = show ((tParse x),(tParse y))
     show (TNP ((Ident x), (Ident y), z)) = show ((tParse x),(tParse y),z)
     show (MP a b c d e f g h)   = show [a,b,c,d,e,f,g,h]
+    show (Err x) = show x
     show _ = show "Invalid"
 
 tParse :: String -> Int
@@ -691,8 +696,6 @@ newForceList oneDlist pairs listIndex = foldl(\acc pair -> if (fst(pair) == list
 modList :: [Int] -> Int -> [Int]
 modList oneDlist keepIndex = (replicate keepIndex (-1))++((oneDlist !! keepIndex):(replicate (8-keepIndex) (-1)))
 
-
-
 --Changes 2D array to reflect forbiden assignments
 forbidAssign :: [[Int]] -> [(Int, Int)] -> [[Int]]
 forbidAssign [] pairs = []
@@ -715,7 +718,7 @@ tnpAssign twoDlist triples = (newTnpList x triples (8-(length twoDlist))):(tnpAs
 
 --Change a list for all forbiden pairs
 newTnpList :: [Int] -> [(Int, Int, Int)] -> Int -> [Int]
-newTnpList oneDlist triples listIndex = foldl(\acc triples -> if (trd1(triples) == listIndex) then (modTnpList oneDlist (trd2(triples)) (trd3(triples))) else acc) oneDlist triples
+newTnpList oneDlist triples listIndex = foldl(\acc triples -> if ((trd1 triples) == listIndex) then (modTnpList oneDlist (trd2 triples) (trd3 triples)) else acc) oneDlist triples
 
 modTnpList :: [Int] -> Int -> Int -> [Int]
 modTnpList oneDlist keepIndex newPenalty = (take keepIndex oneDlist)++(newPenalty:(drop (keepIndex+1) oneDlist))
