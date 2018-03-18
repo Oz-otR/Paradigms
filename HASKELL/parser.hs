@@ -8,6 +8,16 @@ import Data.Maybe
 import Data.Char
 import Text.Read
 
+
+
+tnList  =   [[0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0]]
 -- section Names?
 sections = ["Name:"
             ,"forced partial assignment:"
@@ -83,14 +93,20 @@ parseDriver out content = do
      ; ptnt out $ content !! 3
      ; pmp out $ content !! 4
      ; ptnp out $ content !! 5
+     ; print $ content !! 1
+     ; mapM_ print  $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 1)) --("1", "A") turned into (0, 0)
+     ; mapM_ print  $map taskToCoord $ map listToTuple $ map words (tupleFuckery (content !! 2)) --("1", "A") turned into (0, 0)
      ; let splitByWords = mapByWord $ content !! 4
      ; let (_:end) = splitByWords
-     ; let listO'ListO'IntsOH = mapFullToInt end
+     ; let penList = mapFullToInt end
      -- ; pmp out $ content !! 4
      ; ptnp out $ content !! 5
      --; print $ content
-     ; print listO'ListO'IntsOH
+     ; mapM_ print penList
+     ; putStrLn . show $ (parseNode testlist testTNP currentPath 0)  --Prints lowest penalty of search
+     -- ; let modList = editCols (-1) 2 penList
      -- ; print $ content
+     --editCols (-1) index taillist
      }
 
 mapByWord :: [String] -> [[String]]
@@ -179,7 +195,7 @@ ptnp out l = if ((length l) == 1)
             then return ()
             else if rc' l 1 "TNP"
                 then return()
-                else putStrLn (errPrnt 5) >> exitFailure
+                else putStrLn (errPrnt 10) >> exitFailure
         --writeout out 5 >> exitFailure
 
 ------------------------------------------------------------------------------------
@@ -276,15 +292,127 @@ leastone args index = if (isInfixOf ('\n':'\n':(sections !! index)) (args) && (i
                  then True
                  else False
 
+-- forceAssign :: String -> Int
+-- forceAssign
+
+tupleFuckery :: [[Char]] -> [[Char]]
+tupleFuckery s = map splitTuple tail
+    where head:tail = s
+parseTuple = repl ' ' ','
+
+splitTuple :: [Char] -> [Char]
+splitTuple s = map parseTuple [ c| c <- s, c/=')' && c /= '(']
+
+repl :: Char -> Char -> Char -> Char
+repl c' c s = if s == c then c' else s
+
+listToTuple :: [a] -> (a,a) -- [a,b] -> (a,b)
+listToTuple (x:y:xs) = (x,y)
+
+taskToCoord :: (String, String) -> (Int, Int)
+taskToCoord (s,y)
+    |  (s,"A") == (s,y) = (read s - 1, 0)
+    |  (s,"B") == (s,y) = (read s - 1, 1)
+    |  (s,"C") == (s,y) = (read s - 1, 2)
+    |  (s,"D") == (s,y) = (read s -1 , 3)
+    |  (s,"E") == (s,y) = (read s -1, 4)
+    |  (s,"F") == (s,y) = (read s -1, 5)
+    |  (s,"G") == (s,y) = (read s -1, 6)
+    | otherwise = (read s -1, 7)
+
+-- applyFA :: (Int, Int) -> [[Int]] -> [[Int]]
+-- applyFA coord mpList = mplist !! fst coord
+
+{-Logic now works for 8x8 currenttly-}
+
+testlist = [[0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0]]
+
+
+
+testTNP =  [[0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [1,3,3,4,5,6,7,8]]
+
+currentPath = []
+worstPath = [[0,0,0,0,0,0,0,0],[maxBound :: Int]]
+
+
+-- Finds biggest number in a 2-D list
+parseNode :: [[Int]] -> [[Int]] -> [Int] -> Int -> [[Int]]
+parseNode list tnplist currentPath totalPen
+    | taillist /= [] =
+        returnLowPen [parseNode (safeAdd2DLst (editCols (-1) index taillist) (tnplist !! index)) tnplist  (addToPath index) (totalPen + (headlist !! index)) | index <- [0..7], (headlist !! index) /= -1]
+    | otherwise = returnLowPen [assembleLeaf (addToPath index) (addFirstTNP index) | index <- [0..7], (headlist !! index) /= -1]
+    where   newTaillist n = safeAdd2DLst taillist n  --adds TNP to head of tail list
+            headlist:taillist = list
+            addToPath n = n:currentPath
+            addFirstTNP n = (totalPen + (safeAdd1DLst headlist (tnplist !! (currentPath !! 0))) !! n)
+
+
+--Assembles the leaf information into [[path][pen]]
+assembleLeaf :: [Int] -> Int -> [[Int]]
+assembleLeaf currentPath totalPen  = ((reverse currentPath):[[totalPen]])
+
+
+returnLowPen :: [[[Int]]] -> [[Int]]
+returnLowPen list = foldl(\acc leaf -> if (acc !! 1) < (leaf !! 1) then acc else leaf) worstPath list   --acc is a single 2D array leaf information packet [[path][pen]]
+
+
+--Takes a 2D list and adds a 1D list to it except for -1s
+safeAdd2DLst :: [[Int]] -> [Int] -> [[Int]]
+safeAdd2DLst penlist tnplist = (safeAdd1DLst x tnplist):xs
+    where x:xs = penlist
+
+
+safeAdd1DLst :: [Int] -> [Int] -> [Int]
+safeAdd1DLst = zipWith $ \a b -> if a == -1 || b == -1  then -1 else a + b
+
+
+--Changes the value for an entire column of a 2d array to selected value
+editCol :: Int -> Int -> [Int] -> [Int]
+editCol n 0 (x:xs) = n:xs
+editCol n i (x:xs) = x:editCol n (i - 1) xs
+
+editCols :: Int -> Int -> [[Int]] -> [[Int]]
+editCols n i = map (editCol n i)
+
+
+-- saveElem :: (Int, Int) -> Int
+-- saveElem (x,y) = mineditCols -1 snd(x)
+-- let entry = penList !! snd(x) !! fst(x)
+
+replace :: Int -> Int -> [Int] -> [Int]
+replace i 0 (x:xs) = i:xs
+replace i n (x:xs) = x:replace i (n-1) xs
+{-
+setFA :: (Int, Int) -> [[Int]] -> [[Int]]
+setFA l xs = row_to_replace_in = xs !! fst(l)
+             modified_row = replace -1 snd(l) row_to_replace_in
+             -}
+--x = row
+--i = column to be changed
+-- n = value to
 -- returns a string to be printed
 errPrnt :: Int -> String
 errPrnt 0 = "File Not Found"
 errPrnt 1 = "Wrong Number of Arguments"
-errPrnt 2 = "Partial Assignment Error"
-errPrnt 3 = "Invalid Machine/Task"
-errPrnt 4 = "Machine Penalty Error"
-errPrnt 5 = "Invalid Task Description"
-errPrnt 6 = "Invalid Penalty"
-errPrnt 7 = "No Valid Solution"
+errPrnt 2 = "partial assignment error"
+errPrnt 3 = "invalid machine/task"
+errPrnt 4 = "machine penalty error"
+errPrnt 5 = "invalid task"
+errPrnt 6 = "invalid penalty"
+errPrnt 7 = "No valid solution possible!"
 -- errPrnt 8 = "Integer not in Range"
-errPrnt x = "Error while Parsing File"
+errPrnt x = "Error while parsing input file"
