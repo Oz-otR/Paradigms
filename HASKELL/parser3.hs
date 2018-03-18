@@ -409,10 +409,22 @@ fpaConflict (FA (a,b)) ((FA (x,y)):xs)
 -- Look for letter starting texts to set up the indexes, 0 and 1 should be Name: and corresponding name string.
 divIn :: Int -> [[Char]] -> [Int]
 divIn x []       = []
+divIn x ("Name:":rest) = 
+    let (n,u) = getAName (x+1) rest
+    in x:n:(divIn (n+1) u)
+--    True -> divIn (x+1) (["Name:"] ++ rest)
+--    False -> x:(x+1):(divIn (x+2) rest)
 divIn x ("":rest)   = divIn (x+1) rest
 divIn x (a:rest)    = case isLetter (head a) of
-    False   -> divIn (x+1) rest
     True    -> x:(divIn (x+1) rest)
+    False   -> divIn (x+1) rest
+
+getAName :: Int -> [[Char]] -> (Int, [[Char]])
+getAName x (a:rest)
+    | length a == 0    = getAName (x+1) rest
+    | isPrint (head a) = (x, rest)
+    | otherwise        = getAName (x+1) rest
+
 
 -- Checks if machine penalty line given is valid.
 vetLine :: [[Char]] -> Int
