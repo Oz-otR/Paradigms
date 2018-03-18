@@ -361,13 +361,13 @@ errPrnt x = "Error while parsing input file"
 -- Test if the data in question contains extranous pieces that is considered entirely invalid. (Not letter, not number)
 buildGrid :: [[Char]] -> Int -> [IsObject] -> [IsObject]
 buildGrid arg index opList =
-    let newDex = if index > 8
-                then 8
+    let newDex = if index >= (length arg)
+                then ((length arg)-1)
                 else index
         target = vetLine (linar (arg !! newDex))
     in  if (index < (length arg) && (0 == target))
             then buildGrid arg (index + 1) (lexOps opList (arg !! index) "MP")
-            else if index == 9
+            else if (index == 9)
                 then opList
                 else if 0 == target
                     then letError opList 4
@@ -509,22 +509,6 @@ rowEstablish x y
     | x > 7  = y
     | x <= 7 = Rowpiece [x] (rowEstablish (x+1) y)
 rowEstablish _ _ = Rowpiece [1] Nullpiece
-
-{-
-splashParse :: [String] -> AObject -> Either AObject AGrid
-splashParse ("!!!":xs) = Left (ErObject "error" xs)
-splashParse (x:xs) =
-    case (dropWhileEnd isSpace x) of
-        ("") -> splashParse xs
-        ("Name:") -> splashParse (vetName xs)
-        --("forced partial assignment:") ->
-        --("forbidden machine:") ->
-        --("too-near tasks:") ->
-        --("machine penalties:") ->
-        --("too-near penalities") ->
-        ("Correct") -> Right (MPGrid [1,1,1])
-        _ -> splashParse ["!!!", (errCode "inFault")]
--}
 
 data AGrid = GridPart Rowpiece Rowpiece
 data Rowpiece = Rowpiece [Int] Rowpiece | Nullpiece | Errorpiece Int deriving (Show, Eq)
