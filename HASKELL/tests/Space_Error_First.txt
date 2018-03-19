@@ -1,0 +1,28 @@
+Name:
+Space_Error_First
+
+forced partial assignment:
+
+
+
+
+forbidden machine:
+(1, )
+(2,A)
+(1, A)
+
+too-near tasks:
+
+machine penalties:
+1 1 1 1 1 1 1 -1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities
+(A,5,5)
+(A,B,5)
