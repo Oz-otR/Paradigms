@@ -1,0 +1,22 @@
+Name:
+forbid_wrong
+
+forced partial assignment:
+
+forbidden machine:
+(A,A)
+
+too-near tasks:
+(2,B)
+
+machine penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities

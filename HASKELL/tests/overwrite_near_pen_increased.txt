@@ -1,0 +1,24 @@
+Name:
+overwrite_near_pen_increased
+
+forced partial assignment:
+(1,A)
+(2,B)
+
+forbidden machine:
+
+too-near tasks:
+
+machine penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities
+(A,B,3)
+(A,B,4)

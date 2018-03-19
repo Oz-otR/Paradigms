@@ -1,0 +1,21 @@
+Name:
+natrual_numbers
+
+forced partial assignment:
+(1,A)
+
+forbidden machine:
+
+too-near tasks:
+
+machine penalties:
+1000000000 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+100 100 300 400 500 600 700 800
+
+too-near penalities

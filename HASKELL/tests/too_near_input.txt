@@ -1,0 +1,23 @@
+Name:
+too_near_input
+
+forced partial assignment:
+(1,A)
+(2,B)
+
+forbidden machine:
+
+too-near tasks:
+(1,B)
+
+machine penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities

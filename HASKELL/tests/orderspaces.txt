@@ -1,0 +1,21 @@
+Name:
+orderspaces
+
+forced partial assignment:
+(1,A)
+
+forbidden machine:
+(1,A)
+too-near tasks:
+
+machine  penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities

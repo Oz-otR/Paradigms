@@ -1,0 +1,28 @@
+Name:
+8diag
+
+forced partial assignment:
+
+forbidden machine:
+(1,A)
+(2,B)
+(3,C)
+(4,D)
+(5,E)
+(6,F)
+(7,G)
+(8,H)
+
+too-near tasks:
+
+machine penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities

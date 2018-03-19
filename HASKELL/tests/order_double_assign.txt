@@ -1,0 +1,23 @@
+Name:
+order_double_assign
+
+forced partial assignment:
+(1,A)
+(1,B)
+
+forbidden machine:
+(1,A)
+
+too-near tasks:
+
+machine  penalties:
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1
+
+too-near penalities
