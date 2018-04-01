@@ -8,7 +8,11 @@ main :-
     read_file(Str,Lines),
     close(Str),
     write(Lines), nl,
-    isName(Lines). %needs to be connected
+    %validInput(Lines, Remainder), %needs to be connected
+    maplist(removeLastSpaces(), Lines, SpacelessLines),
+    validInput(SpacelessLines, Out),
+    write(Out).
+
 
 
 %Put all of the file into a list
@@ -21,40 +25,65 @@ read_file(Stream,[X|L]) :-
     read_line_to_codes(Stream,Codes),
     atom_chars(X, Codes),
     read_file(Stream,L), !.
-/*
-parseStart(List):-
-    write("here"),
-    isName(Name:,List).
-    */
 
-isName(Y):-
-    Y = [X|Tail],
-    D ='Name:',
-    X == D.
+validInput --> name,fpa,forbidM,tnt,machs,tnp.
 
-isName(X):-
-    (X = [Y|Tail],
-    %W = '',
-    split_string(Y,':','',Z),
-    W = 'Name',
-    Z=[H|T],
-    W==H,
-    write("Recieved the correct 'Name:'  "),nl
-    );
-    %write(T)
-    write('Error while parsing input file'), nl,
-    halt(0).
-    %T == "".
+name --> nameHeader, nameBody,arbLines.
 
-spaceCheck(X):-
-    X == '';
-    X == '\s'.
+nameHeader --> ['Name:'].
+nameBody --> [X], {hasInternalSpace(X)}.
+
+%this is a section 
+fpa-->fpaHeader,fpaBody,arbLines.
+
+fpaHeader--> ['forced partial assignment:'].
+fpaBody--> [].
+
+%SECTIIONNN EXODIA
+forbidM-->forbidHeader,forbidBody,arbLines.
+
+forbidHeader--> ['forbidden machine:'].
+forbidBody-->[].
+
+%SECTIIONNN YAAS
+tnt-->tntHeader,tntBody,arbLines.
+
+tntHeader--> ['too-near tasks:'].
+tntBody-->[].
+
+%TRANSFORMERS SECTIONS
+machs-->machsHeader,machsBody,arbLines.
+
+machsHeader--> ['machine penalties:'].
+machsBody-->mN,mN,mN,mN,mN,mN,mN,mN.
+mN --> [X], {function(X)}.
+
+function(X):- split_string(X,' ','',Y),length(Y,8),maplist(atom_number(),Y,Z),maplist(integer(),Z),maplist(<(0) ,Z).
+
+%BEEEEEES?!
+tnp-->tnpsHeader,tnpsBody,after.
+
+tnpsHeader--> ['too-near penalities'].
+tnpsBody-->[].
+
+
+arbLines --> [''],after.
+after-->[].
+after-->[''],after.
+
+hasInternalSpace(X):- atom_length(X,Y),Y>0,split_string(X,' ','',Z),length(Z,1);write('Error while parsing input file'),halt(0).
+%validName(X) :- /+atom_length(X,0), maplist(white(),X,WhiteTable), write(WhiteTable), ln.
+
+
+%Takes a single element and returns that element without spaces at end
+removeLastSpaces(AtomStart, Return) :- atom_chars(AtomStart, List), reverse(List,Zspace), removeSpaces(Zspace,Z), reverse(Z, AtomFinish), atom_chars(Return, AtomFinish).
+
+removeSpaces(List, ListMinusSpaces) :- List = [H|T], H = '\s', removeSpaces(T, ListMinusSpaces).
+removeSpaces(List, List).
+
 
 %spaceCheck(X):-
 
-
-
-?-main.
 
 /*
 %%To_Do
@@ -82,4 +111,6 @@ forall(nth0(I, List, E), format('List[~w]=~w~n', [I, E])).
 %List[2]=c
 %List[3]=d
 */
+
+?-main.
 ?-halt(0).
