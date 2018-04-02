@@ -1,3 +1,5 @@
+%treeNode(Task, Machine, Penalty) will be added during runtime
+
 main :-
     %Get the arguments from command line
     current_prolog_flag(argv, Argv),
@@ -8,11 +10,16 @@ main :-
     read_file(Str,Lines),
     close(Str),
     write(Lines), nl,
-    %validInput(Lines, Remainder), %needs to be connected
     maplist(removeLastSpaces(), Lines, SpacelessLines),
+    assert(treeNode(-1,-1,-1)), %Creates first treeNode to allow others to be added
     validInput(SpacelessLines, Out),
-    write(Out).
+    retract(treeNode(-1,-1,-1)),
+    write(Out), nl,
+    printTreeNodes.
 
+
+%Prints content of all current "treeNode" predicates for
+printTreeNodes() :- treeNode(Task, Machine, Penalty), write((Task, Machine, Penalty)), nl, fail; true.
 
 
 %Put all of the file into a list
@@ -26,41 +33,65 @@ read_file(Stream,[X|L]) :-
     atom_chars(X, Codes),
     read_file(Stream,L), !.
 
+%DCG for parsing
 validInput --> name,fpa,forbidM,tnt,machs,tnp.
 
+%DCG for parsing Name information
 name --> nameHeader, nameBody,arbLines.
 
 nameHeader --> ['Name:'].
-nameBody --> [X], {hasInternalSpace(X)}.
+nameBody --> [X], {hasInternalSpace(X)}. %Checks if name is of valid form (no spaces)
 
-%this is a section 
+%DCG for parsing Forced Partial Assignment information 
 fpa-->fpaHeader,fpaBody,arbLines.
 
 fpaHeader--> ['forced partial assignment:'].
 fpaBody--> [].
 
-%SECTIIONNN EXODIA
+%DCG for parsing Forbidden Machine information
 forbidM-->forbidHeader,forbidBody,arbLines.
 
 forbidHeader--> ['forbidden machine:'].
 forbidBody-->[].
 
-%SECTIIONNN YAAS
+%DCG for parsing Too-near Penalty information
 tnt-->tntHeader,tntBody,arbLines.
 
 tntHeader--> ['too-near tasks:'].
 tntBody-->[].
 
-%TRANSFORMERS SECTIONS
+%DCG for parsing Machine Penalty information
 machs-->machsHeader,machsBody,arbLines.
 
 machsHeader--> ['machine penalties:'].
 machsBody-->mN,mN,mN,mN,mN,mN,mN,mN.
-mN --> [X], {function(X)}.
+mN --> [X], {parseArray(X)}.  
 
-function(X):- split_string(X,' ','',Y),length(Y,8),maplist(atom_number(),Y,Z),maplist(integer(),Z),maplist(<(0) ,Z).
+%Confirms array is of correct form, all nums >= 0, and asserts the results
+parseArray(SpaceList):- 
+    split_string(SpaceList,' ','',NoSpaceList),
+    length(NoSpaceList,8),
+    maplist(atom_number(),NoSpaceList,IntList),
+    maplist(integer(),IntList),
+    maplist(<(0) ,IntList),
+    getMachine(0,Machine),
+    assertArray(0,Machine,IntList).
 
-%BEEEEEES?!
+%Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
+getMachine(Check, Machine) :- 
+    \+ treeNode(_,Check,_), Machine is Check;
+    Check =< 8, NewCheck is Check+1, getMachine(NewCheck, Machine).
+
+%Asserts all elements in the list as new treeNodes
+assertArray(_,_,[]).
+assertArray(Task, Machine, [Penalty|Remaining]) :- 
+    assert(treeNode(Task, Machine, Penalty)),
+    NewTask is Task+1,
+    assertArray(NewTask, Machine, Remaining).
+
+
+
+%DCG for parsing Too-near Penalty information
 tnp-->tnpsHeader,tnpsBody,after.
 
 tnpsHeader--> ['too-near penalities'].
@@ -71,8 +102,12 @@ arbLines --> [''],after.
 after-->[].
 after-->[''],after.
 
-hasInternalSpace(X):- atom_length(X,Y),Y>0,split_string(X,' ','',Z),length(Z,1);write('Error while parsing input file'),halt(0).
-%validName(X) :- /+atom_length(X,0), maplist(white(),X,WhiteTable), write(WhiteTable), ln.
+hasInternalSpace(X):- 
+    atom_length(X,Y),
+    Y>0,
+    split_string(X,' ','',Z),
+    length(Z,1);
+    write('Error while parsing input file'),halt(0).
 
 
 %Takes a single element and returns that element without spaces at end
