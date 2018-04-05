@@ -12,12 +12,10 @@ main :-
     open(InputFile, read, Str), %this really doesn't need a comment to explain
     read_file(Str,Lines),
     close(Str),
-%    write(Lines), nl,
     maplist(removeLastSpaces(), Lines, SpacelessLines),
     generatePredSeeds,
     validInput(SpacelessLines, Out),
     destroyPredSeeds,
-%    write(Out), nl,
     printAll.
 
 	
@@ -68,7 +66,7 @@ read_file(Stream,[X|L]) :-
 
 
 
-%-----------------DCG for parsing--------------------
+%----------------------DCG For Parsing Start------------------------
 validInput --> name,fpa,forbidM,tnt,machs,tnp.
 
 %DCG for parsing Name information
@@ -82,11 +80,12 @@ nameBody --> [X], {hasInternalSpace(X)}.
 fpa --> fpaHeader,fpaBody('0').
 
 fpaHeader --> ['forced partial assignment:'].
-fpaBody(Flag) --> fpaEatPair(Flag, NewFlag), {NewFlag = '0'; NewFlag = '1'}, fpaBody(NewFlag) ;
-	{NewFlag = '2', Flag = '1'}, [];
-	{NewFlag = '2', Flag = '0'}, arbLines.
+fpaBody(Flag) --> fpaEatPair(NewFlag), 
+    {\+ NewFlag = '2'}, fpaBody(NewFlag) ;
+	{Flag = '1'}, [];
+	{Flag = '0'}, arbLines.
 	
-fpaEatPair(Flag, NewFlag) --> 
+fpaEatPair(NewFlag) --> 
 	[X], {parseFPA(X), NewFlag = '0'}; 
 	[''], {NewFlag = '1'};
 	[], {NewFlag = '2'}.
@@ -97,12 +96,12 @@ fpaEatPair(Flag, NewFlag) -->
 forbidM --> forbidHeader,forbidBody('0').
 
 forbidHeader --> ['forbidden machine:'].
-forbidBody(Flag) --> forbidEatPair(Flag, NewFlag), 
-	{NewFlag = '0'; NewFlag = '1'}, forbidBody(NewFlag) ;
-	{NewFlag = '2', Flag = '1'}, [];
-	{NewFlag = '2', Flag = '0'}, arbLines.
+forbidBody(Flag) --> forbidEatPair(NewFlag), 
+	{\+ NewFlag = '2'}, forbidBody(NewFlag) ;
+	{Flag = '1'}, [];
+	{Flag = '0'}, arbLines.
 	
-forbidEatPair(Flag, NewFlag) --> 
+forbidEatPair(NewFlag) --> 
 	[X], {parseForbid(X), NewFlag = '0'}; 
 	[''], {NewFlag = '1'};
 	[], {NewFlag = '2'}.
@@ -113,12 +112,12 @@ forbidEatPair(Flag, NewFlag) -->
 tnt --> tntHeader,tntBody('0').
 
 tntHeader --> ['too-near tasks:'].
-tntBody(Flag) --> tntEatPair(Flag, NewFlag), 
-	{NewFlag = '0'; NewFlag = '1'}, tntBody(NewFlag) ;
-	{NewFlag = '2', Flag = '1'}, [];
-	{NewFlag = '2', Flag = '0'}, arbLines.
+tntBody(Flag) --> tntEatPair(NewFlag), 
+	{\+ NewFlag = '2'}, tntBody(NewFlag) ;
+	{Flag = '1'}, [];
+	{Flag = '0'}, arbLines.
 	
-tntEatPair(Flag, NewFlag) --> 
+tntEatPair(NewFlag) --> 
 	[X], {parseTNT(X), NewFlag = '0'}; 
 	[''], {NewFlag = '1'};
 	[], {NewFlag = '2'}.
@@ -138,12 +137,12 @@ mN --> [X], {parseArray(X)}.
 tnp --> tnpHeader,tnpBody('0').
 
 tnpHeader --> ['too-near penalities'].
-tnpBody(Flag) --> tnpEatPair(Flag, NewFlag), 
-	{NewFlag = '0'; NewFlag = '1'}, tnpBody(NewFlag) ;
-	{NewFlag = '2', Flag = '1'}, [];
-	{NewFlag = '2', Flag = '0'}, after.
+tnpBody(Flag) --> tnpEatPair(NewFlag), 
+	{\+ NewFlag = '2'}, tnpBody(NewFlag) ;
+	{Flag = '1'}, [];
+	{Flag = '0'}, after.
 	
-tnpEatPair(Flag, NewFlag) --> 
+tnpEatPair(NewFlag) --> 
 	[X], {parseTNP(X), NewFlag = '0'}; 
 	[''], {NewFlag = '1'};
 	[], {NewFlag = '2'}.
@@ -154,83 +153,82 @@ tnpEatPair(Flag, NewFlag) -->
 arbLines --> [''],after.
 after --> [''],after.
 after --> [].
+%----------------------DCG For Parsing End------------------------
 
 
-
-
-
+%-------------------------Parsers Start------------------------------
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseFPA(Atom) :-
-    atom_codes(Atom, List),
-    List = [OB,INT,COMMA,CHAR,CB|Remainder],
-    OB =:= "(",
-    INT >= "1", INT =< "7",
-    COMMA =:= ",",
-    CHAR >= "A", CHAR =< "H",
-    CB =:= ")",
-    Remainder = [],
-    char_code(Task, INT), char_code(Mach, CHAR),
-    assert(fpaNode(Task,Mach));         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-	\+ Atom = '', 
+    \+ Atom = '', 
 	\+ Atom = 'forbidden machine:', 
-	write('Error with fpa format for pairing |'), write(Atom), write('|'), nl,halt(0).
+    atom_codes(Atom, List),
+    check2Tuple(List,0),
+    List = [OB,INT,COMMA,CHAR,CB|Remainder],
+    checkChar(OB,"("),
+    checkIntBounds(INT),
+    checkChar(COMMA,","),
+    checkCharBounds(CHAR),
+    checkChar(CB,")"),
+    checkEmpty(Remainder),
+    char_code(Task, INT), char_code(Mach, CHAR),
+    assert(fpaNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+	
 
-	
-	
-	
+
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseForbid(Atom) :-
-    atom_codes(Atom, List),
-    List = [OB,INT,COMMA,CHAR,CB|Remainder],
-    OB =:= "(",
-    INT >= "1", INT =< "7",
-    COMMA =:= ",",
-    CHAR >= "A", CHAR =< "H",
-    CB =:= ")",
-    Remainder = [],
-    char_code(Task, INT), char_code(Mach, CHAR),
-    assert(forbidMNode(Task,Mach));         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-	\+ Atom = '', 
+    \+ Atom = '', 
 	\+ Atom = 'too-near tasks:', 
-	write('Error with forbid format for pairing |'), write(Atom), write('|'), nl,halt(0).
+    atom_codes(Atom, List),
+    check2Tuple(List,0),
+    List = [OB,INT,COMMA,CHAR,CB|Remainder],
+    checkChar(OB,"("),
+    checkIntBounds(INT),
+    checkChar(COMMA,","),
+    checkCharBounds(CHAR),
+    checkChar(CB,")"),
+    checkEmpty(Remainder),
+    char_code(Task, INT), char_code(Mach, CHAR),
+    assert(forbidMNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+
 
 
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNT(Atom) :-
+    \+ Atom = '', 
+	\+ Atom = 'machine penalties:',
     atom_codes(Atom, List),
+    check2Tuple(List,0),
     List = [OB,INT1,COMMA,INT2,CB|Remainder],
-    OB =:= "(",
-    INT1 >= "1", INT1 =< "7",
-    COMMA =:= ",",
-    INT2 >= "1", INT2 =< "7",
-    CB =:= ")",
-    Remainder = [],
+    checkChar(OB,"("),
+    checkIntBounds(INT1),
+    checkChar(COMMA,","),
+    checkIntBounds(INT2),
+    checkChar(CB,")"),
+    checkEmpty(Remainder),
     char_code(Task1, INT1), char_code(Task2, INT2),
-    assert(tntNode(Task1,Task2));         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-	\+ Atom = '', 
-	\+ Atom = 'machine penalties:', 
-	write('Error with tnt format for pairing |'), write(Atom), write('|'), nl,halt(0).
-	
+    assert(tntNode(Task1,Task2)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+
 	
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNP(Atom) :-
+    \+ Atom = '', 
     atom_codes(Atom, List),
+    check3Tuple(List,0),
     List = [OB,INT1,COMMA,CHAR,COMMA,INT2,CB|Remainder],
-    OB =:= "(",
-    INT1 >= "1", INT1 =< "7",
-    COMMA =:= ",",
-    CHAR >= "A", INT2 =< "H",
-	INT2 >= "1", INT1 =< "9",				%Needs to accept any int, not 1<X<9
-    CB =:= ")",
-    Remainder = [],
+    checkChar(OB,"("),
+    checkIntBounds(INT1),
+    checkChar(COMMA,","),
+    checkCharBounds(CHAR),
+    checkChar(COMMA,","),
+    checkIntBounds(INT2),
+    checkChar(CB,")"),
+    checkEmpty(Remainder),
     char_code(Task, INT1), char_code(Mach, CHAR), char_code(Penalty, INT2),
-    assert(tnpNode(Task,Mach,Penalty));         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-	\+ Atom = '', 
-	write('Error with tnt format for pairing |'), write(Atom), write('|'), nl,halt(0).
+    assert(tnpNode(Task,Mach,Penalty)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+
 	
-	
-	
-	
+
 %Confirms array is of correct form, all nums >= 0, and asserts the results
 parseArray(Atom):-
     split_string(Atom,' ','',AtomList),
@@ -252,11 +250,11 @@ assertArray(Task, Machine, [Penalty|Remaining]) :-
     assert(treeNode(Task, Machine, Penalty)),
     NewTask is Task+1,
     assertArray(NewTask, Machine, Remaining).
-
-	
-
+%-------------------------Parsers End------------------------------
 
 
+
+%---------------------Validity Checks Start------------------------
 %Checks if name is of valid form (no spaces)
 hasInternalSpace(X):-
     atom_length(X,Y),
@@ -264,6 +262,71 @@ hasInternalSpace(X):-
     split_string(X,' ','',Z),
     length(Z,1);
     write('Error while parsing input file'),halt(0).
+
+%Takes a list of ints converted to str and returns the concatinated int
+/*      This code may not be needed, slated for removal
+collectNumber(StringList, NumberList, Number, RemainingList) :-
+    %StringList = [1,2,3],
+    StringList = [H|T],
+    H >= "0",
+    H =< "9",
+    NewNumberList = [H|NumberList],
+    collectNumber(T, NewNumberList, Number, RemainingList).
+*/ 
+
+
+%Checks format of pairing variabls and throws error if fail
+checkChar(Char, ExpectedChar) :- 
+    Char =:= ExpectedChar;
+    write('invalid task1'),halt(0).
+
+checkCharBounds(Char) :-
+    Char >= "A",
+    Char =< "H";
+    write('invalid task2'),halt(0).
+
+
+checkIntBounds(Int) :-
+    Int >= "1",
+    Int =< "7";
+    write('invalid task3'),halt(0).
+    
+checkEmpty(Remainder) :-
+    Remainder = [];
+    write('Error while parsing input file'),halt(0).
+
+
+%Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
+check2Tuple(List,Flag) :-
+    Flag = 0, List = [H|T], H =:= "(", check2Tuple(T,1);
+    Flag = 1, List = [H|T], \+ H =:= 32, check2Tuple(T,2);
+    Flag = 2, List = [H|T], H =:= ",", check2Tuple(T,3);
+    Flag = 3, List = [H|T], \+ H =:= 32,check2Tuple(T,4);
+    Flag = 4, List = [H|T], H =:= ")", check2Tuple(T,5);
+    Flag = 5;
+    List = [H|_], H =:= 32, write('Error while parsing input file'),halt(0);  %32 is ascii ''
+    List = [_|T], check2Tuple(T,Flag);
+    write('Error while parsing input file'),halt(0).
+    
+%Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
+check3Tuple(List,Flag) :-
+    Flag = 0, List = [H|T], H =:= "(", check2Tuple(T,1);
+    Flag = 1, List = [H|T], \+ H =:= 32, check2Tuple(T,2);
+    Flag = 2, List = [H|T], H =:= ",", check2Tuple(T,3);
+    Flag = 3, List = [H|T], \+ H =:= 32,check2Tuple(T,4);
+    Flag = 4, List = [H|T], H =:= ",", check2Tuple(T,5);
+    Flag = 5, List = [H|T], \+ H =:= 32,check2Tuple(T,6);
+    Flag = 6, List = [H|T], H =:= ")", check2Tuple(T,7);
+    Flag = 7;
+    List = [H|_], H =:= 32, write('Error while parsing input file'),halt(0);  %32 is ascii ''
+    List = [_|T], check2Tuple(T,Flag);
+    write('Error while parsing input file'),halt(0).
+    
+%------------------------Validity Checks End---------------------------
+
+
+
+
 
 
 %Takes a single element and returns that element without spaces at end
