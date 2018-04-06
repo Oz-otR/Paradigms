@@ -46,7 +46,7 @@ printAll() :- printFPA, printForbidM, printTNT, printTreeNodes, printTNP, nl,nl.
 printFPA() :- write("---fpa---"), nl, fpaNode(Task, Machine), write((Task, Machine)), nl, fail; true.
 printForbidM() :- nl, write("---forbid M---"), nl,forbidMNode(Task, Machine), write((Task, Machine)), nl, fail; true.
 printTNT() :- nl, write("---tnt---"), nl,tntNode(Task1, Task2), write((Task1, Task2)), nl, fail; true.
-printTreeNodes() :- nl, write("---Tree---"), nl,treeNode(Task, Machine, Penalty), write((Task, Machine, Penalty)), nl, fail; true.
+printTreeNodes() :- nl, write("---PenaltyNodes---"), nl,treeNode(Task, Machine, Penalty), write((Task, Machine, Penalty)), nl, fail; true.
 printTNP() :- nl, write("---tnp---"), nl,tnpNode(Task, Machine, Penalty), write((Task, Machine, Penalty)), nl, fail; true.
 %----------------------------------------------------------
 
@@ -171,7 +171,7 @@ parseFPA(Atom) :-
     checkCharBounds(CHAR),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    char_code(Task, INT), char_code(Mach, CHAR),
+    Task is INT-"1", Mach is CHAR-"A",
     checkPA(Task,Mach),
     assert(fpaNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 
@@ -190,7 +190,7 @@ parseForbid(Atom) :-
     checkCharBounds(CHAR),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    char_code(Task, INT), char_code(Mach, CHAR),
+    Task is INT-"1", Mach is CHAR-"A",
     assert(forbidMNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 
 
@@ -208,7 +208,7 @@ parseTNT(Atom) :-
     checkIntBounds(INT2),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    char_code(Task1, INT1), char_code(Task2, INT2),
+    Task1 is INT1-"1", Task2 is INT2-"1",
     assert(tntNode(Task1,Task2)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 
 
@@ -250,7 +250,7 @@ parseTNP(Atom) :-
     checkPenalty(Remainder, Penalty, End),
     Penalty >= 0,
     checkEmpty(End),
-    char_code(Task, INT1), char_code(Mach, CHAR),
+    Task is INT1-"1", Mach is CHAR-"A",
     assert(tnpNode(Task,Mach,Penalty)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 
 
@@ -265,13 +265,13 @@ hasInternalSpace(X):-
     Y>0,
     split_string(X,' ','',Z),
     length(Z,1);
-    write('Error while parsing input file IS'),halt(0).
+    write('Error while parsing input file IS'),nl,halt(0).
 
 %Checks if partial assignment has already been made to the task or machine
 checkPA(Task, Mach) :-
     \+ fpaNode(Task,_),
     \+ fpaNode(_,Mach);
-    write('partial assignment error'),halt(0).
+    write('partial assignment error'),nl,halt(0).
 
 
 %Special check for TNP last number which could be more than one digit
@@ -305,7 +305,7 @@ checkIntBounds(Int) :-
 checkEmpty(Remainder) :-
     Remainder = [];
     Remainder = [""];   %<-- Unlikely to cause issues but can be split off if needed
-    write('Error while parsing input file Empty'),halt(0).
+    write('Error while parsing input file Empty'),nl,halt(0).
 
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check2Tuple(List,Flag) :-
@@ -317,7 +317,7 @@ check2Tuple(List,Flag) :-
     Flag = 5;
     List = [H|_], H =:= 32, write('Error while parsing input file'),halt(0);  %32 is ascii ''
     List = [_|T], check2Tuple(T,Flag);
-    write('Error while parsing input file 2T'),halt(0).
+    write('Error while parsing input file 2T'),nl,halt(0).
 
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check3Tuple(List,Flag) :-
@@ -329,7 +329,7 @@ check3Tuple(List,Flag) :-
     Flag = 5, List = [H|T], \+ H =:= 32,check3Tuple(T,6);
     Flag = 6, List = [H|T], H =:= ")", check3Tuple(T,7);
     Flag = 7;
-    List = [H|_], H =:= 32, write('Error while parsing input file'),halt(0);  %32 is ascii ''
+    List = [H|_], H =:= 32, write('Error while parsing input file'),nl,halt(0);  %32 is ascii ''
     List = [_|T], check3Tuple(T,Flag);
     write('Error while parsing input file 3T'),nl,halt(0).
 
