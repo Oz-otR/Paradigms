@@ -355,28 +355,45 @@ removeSpaces(List, List).
 %---------------------------LOGIC START--------------------------------
 
 
+% idastar( Start, Solution):
+% Perform IDA* search; Start is the start node
+idastar( Start, Solution) :-
+    retract( next_bound(_)), fail
+    ;
+    asserta( next_bound( 0)),
+    idastarO( Start, Solution).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+idastarO( Start, Sol) :-
+    retract( next_bound( Bound)),
+    asserta( next_bound( inf)),
+    f( Start, F),
+    df( [Start], F, Bound, Sol)
+    ;
+    next_bound( NextBound),
+    NextBound < inf,
+    idastarO( Start, Sol).
+% df( Path, F, Bound, Sol):
+% Perform depth-first search within Bound
+% Path is the path from start node so far (in reverse order)
+% F is the f-value of the current node, i.e. the head of Path
+df( [N | Ns], F, Bound, [N | Ns]) :-
+    F =< Bound,
+    goal(N).
+df( [N | Ns], F, Bound, Sol) :-
+    F =< Bound,
+    s( N, Nl), \+ member( Nl, Ns),
+    f( Nl, Fl),
+    df( [N1,N | Ns], Fl, Bound, Sol).
+df( _, F, Bound, _) :-
+    F > Bound,
+    update_next_bound( F),
+    fail.
+update_next_bound( F) :-
+    next_bound( Bound),
+    Bound =< F, !
+    ;
+    retract( next_bound( Bound)),!,
+    asserta( next_bound( F)).
 
 
 
@@ -410,4 +427,3 @@ forall(nth0(I, List, E), format('List[~w]=~w~n', [I, E])).
 
 ?-main.
 ?-halt(0).
-
