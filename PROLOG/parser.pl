@@ -1,8 +1,8 @@
-%treeNode(Task, Machine, Penalty) are added during runtime
-%fpaNode(Task, Machine) are added during runtime
-%forbidMNode(Task, Machine) are added during runtime
+%treeNode(Machine, Task, Penalty) are added during runtime
+%fpaNode(Machine, Task) are added during runtime
+%forbidMNode(Machine, Task) are added during runtime
 %tntNode(Task, Task) are added during runtime
-%tnpNode(Task, Machine, Penalty) are added during runtime
+%tnpNode(Machine, Task, Penalty) are added during runtime
 
 main :-
     %Get the arguments from command line
@@ -26,17 +26,17 @@ main :-
 generatePredSeeds() :-
     assert(fpaNode(-1,-1)),
     assert(forbidMNode(-1,-1)),
-        assert(tntNode(-1,-1)),
-        assert(treeNode(-1,-1,-1)),
-        assert(tnpNode(-1,-1,-1)).
+    assert(tntNode(-1,-1)),
+    assert(treeNode(-1,-1,-1)),
+    assert(tnpNode(-1,-1,-1)).
 
 %Destroys predicate seeds
 destroyPredSeeds() :-
     retract(fpaNode(-1,-1)),
     retract(forbidMNode(-1,-1)),
-        retract(tntNode(-1,-1)),
-        retract(treeNode(-1,-1,-1)),
-        retract(tnpNode(-1,-1,-1)).
+    retract(tntNode(-1,-1)),
+    retract(treeNode(-1,-1,-1)),
+    retract(tnpNode(-1,-1,-1)).
 
 
 
@@ -66,6 +66,8 @@ read_file(Stream,[X|L]) :-
 
 
 
+%--------------------------PARSING START--------------------------------
+%--------------------------PARSING START--------------------------------
 
 %----------------------DCG For Parsing Start------------------------
 validInput --> name,fpa,forbidM,tnt,machs,tnp.
@@ -201,14 +203,14 @@ parseTNT(Atom) :-
         \+ Atom = 'machine penalties:',
     atom_codes(Atom, List),
     check2Tuple(List,0),
-    List = [OB,INT1,COMMA,INT2,CB|Remainder],
+    List = [OB,CHAR1,COMMA,CHAR2,CB|Remainder],
     checkChar(OB,"("),
-    checkIntBounds(INT1),
+    checkCharBounds(CHAR1),
     checkChar(COMMA,","),
-    checkIntBounds(INT2),
+    checkCharBounds(CHAR2),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    Task1 is INT1-"1", Task2 is INT2-"1",
+    Task1 is CHAR1-"A", Task2 is CHAR2-"A",
     assert(tntNode(Task1,Task2)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 
 
@@ -241,17 +243,17 @@ parseTNP(Atom) :-
     \+ Atom = '',
     atom_codes(Atom, List),
     check3Tuple(List,0),
-    List = [OB,INT1,COMMA1,CHAR,COMMA2|Remainder],
+    List = [OB,CHAR1,COMMA1,CHAR2,COMMA2|Remainder],
     checkChar(OB,"("),
-    checkIntBounds(INT1),
+    checkCharBounds(CHAR1),
     checkChar(COMMA1,","),
-    checkCharBounds(CHAR),
+    checkCharBounds(CHAR2),
     checkChar(COMMA2,","),
     checkPenalty(Remainder, Penalty, End),
     Penalty >= 0,
     checkEmpty(End),
-    Task is INT1-"1", Mach is CHAR-"A",
-    assert(tnpNode(Task,Mach,Penalty)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+    Task1 is CHAR1-"A", Task2 is CHAR2-"A",
+    assert(tnpNode(Task1,Task2,Penalty)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 
 
 %-------------------------Parsers End------------------------------
@@ -345,6 +347,37 @@ removeLastSpaces(AtomStart, Return) :- atom_chars(AtomStart, List), reverse(List
 
 removeSpaces(List, ListMinusSpaces) :- List = [H|T], H = '\s', removeSpaces(T, ListMinusSpaces).
 removeSpaces(List, List).
+
+%--------------------------PARSING END--------------------------------
+%--------------------------PARSING END--------------------------------
+
+
+%---------------------------LOGIC START--------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
