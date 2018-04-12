@@ -2,7 +2,10 @@
 %fpaNode(Machine, Task) are added during runtime
 %forbidMNode(Machine, Task) are added during runtime
 %tntNode(Task, Task) are added during runtime
-%tnpNode(Machine, Task, Penalty) are added during runtime
+%tnpNode(Machine, Task, Penalty) are added during runtime\
+
+%bestPath().
+%bestQual().
 
 main :-
     %Get the arguments from command line
@@ -17,8 +20,9 @@ main :-
     generatePredSeeds,
     validInput(SpacelessLines, Out),
     destroyPredSeeds,
-    printAll.
-
+    printAll,
+    !,logicMaster(),nl,
+    printOutput(OutputFile).
 
 
 %Creates an invalid version assignment of the predicates so inital checks dont crash
@@ -28,7 +32,9 @@ generatePredSeeds() :-
     assert(forbidMNode(-1,-1)),
     assert(tntNode(-1,-1)),
     assert(treeNode(-1,-1,-1)),
-    assert(tnpNode(-1,-1,-1)).
+    assert(tnpNode(-1,-1,-1)),
+    assert(bestQual(0)),
+    assert(bestPath(0)).
 
 %Destroys predicate seeds
 destroyPredSeeds() :-
@@ -36,10 +42,9 @@ destroyPredSeeds() :-
     retract(forbidMNode(-1,-1)),
     retract(tntNode(-1,-1)),
     retract(treeNode(-1,-1,-1)),
-    retract(tnpNode(-1,-1,-1)).
-
-
-
+    retract(tnpNode(-1,-1,-1)),
+    retract(bestQual(0)),
+    retract(bestPath(0)).
 
 %Debug print statments-------------------------------------
 printAll() :- printFPA, printForbidM, printTNT, printTreeNodes, printTNP, nl,nl.
@@ -49,116 +54,78 @@ printTNT() :- nl, write("---tnt---"), nl,tntNode(Task1, Task2), write((Task1, Ta
 printTreeNodes() :- nl, write("---PenaltyNodes---"), nl,treeNode(Task, Machine, Penalty), write((Task, Machine, Penalty)), nl, fail; true.
 printTNP() :- nl, write("---tnp---"), nl,tnpNode(Task, Machine, Penalty), write((Task, Machine, Penalty)), nl, fail; true.
 %----------------------------------------------------------
-
-
-
-
 %Put all of the file into a list
 read_file(Stream,[]) :-
     at_end_of_stream(Stream).
-
 %Split up the characters into row by row in a list and turns them into atoms?
 read_file(Stream,[X|L]) :-
     \+ at_end_of_stream(Stream),
     read_line_to_codes(Stream,Codes),
     atom_chars(X, Codes),
     read_file(Stream,L), !.
-
-
-
 %--------------------------PARSING START--------------------------------
 %--------------------------PARSING START--------------------------------
-
 %----------------------DCG For Parsing Start------------------------
 validInput --> name,fpa,forbidM,tnt,machs,tnp.
-
 %DCG for parsing Name information
 name --> after, nameHeader, after, nameBody, arbLines.
-
 nameHeader --> ['Name:'].
 nameBody --> [X], {hasInternalSpace(X)}.
-
-
 %DCG for parsing Forced Partial Assignment information
 fpa --> fpaHeader,fpaBody('0').
-
 fpaHeader --> ['forced partial assignment:'].
 fpaBody(Flag) --> fpaEatPair(NewFlag),
     {\+ NewFlag = '2'}, fpaBody(NewFlag) ;
         {Flag = '1'}, [];
         {Flag = '0'}, arbLines.
-
 fpaEatPair(NewFlag) -->
         [X], {parseFPA(X), NewFlag = '0'};
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
-
-
-
 %DCG for parsing Forbidden Machine information
 forbidM --> forbidHeader,forbidBody('0').
-
 forbidHeader --> ['forbidden machine:'].
 forbidBody(Flag) --> forbidEatPair(NewFlag),
         {\+ NewFlag = '2'}, forbidBody(NewFlag) ;
         {Flag = '1'}, [];
         {Flag = '0'}, arbLines.
-
 forbidEatPair(NewFlag) -->
         [X], {parseForbid(X), NewFlag = '0'};
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
-
-
-
 %DCG for parsing Too-near Penalty information
 tnt --> tntHeader,tntBody('0').
-
 tntHeader --> ['too-near tasks:'].
 tntBody(Flag) --> tntEatPair(NewFlag),
         {\+ NewFlag = '2'}, tntBody(NewFlag) ;
         {Flag = '1'}, [];
         {Flag = '0'}, arbLines.
-
 tntEatPair(NewFlag) -->
         [X], {parseTNT(X), NewFlag = '0'};
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
-
-
-
 %DCG for parsing Machine Penalty information
 machs --> machsHeader,after,machsBody,arbLines.
-
 machsHeader --> ['machine penalties:'].
+%do we need two afters here?
 machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN.
 mN --> [X], {parseArray(X)}.
-
-
-
 %DCG for parsing Too-near Penalty information
 tnp --> tnpHeader,tnpBody('0').
-
 tnpHeader --> ['too-near penalities'].
 tnpBody(Flag) --> tnpEatPair(NewFlag),
         {\+ NewFlag = '2'}, tnpBody(NewFlag) ;
         {Flag = '1'}, [];
         {Flag = '0'}, after.
-
 tnpEatPair(NewFlag) -->
         [X], {parseTNP(X), NewFlag = '0'};
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
-
-
-
 %DCG for blank Newlines
 arbLines --> [''],after.
 after --> [''],after.
 after --> [].
 %----------------------DCG For Parsing End------------------------
-
-
 %-------------------------Parsers Start------------------------------
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseFPA(Atom) :-
@@ -173,12 +140,9 @@ parseFPA(Atom) :-
     checkCharBounds(CHAR),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    Task is INT-"1", Mach is CHAR-"A",
+    Task is INT-"0", Mach is CHAR-"@",
     checkPA(Task,Mach),
     assert(fpaNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-
-
-
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseForbid(Atom) :-
     \+ Atom = '',
@@ -192,11 +156,8 @@ parseForbid(Atom) :-
     checkCharBounds(CHAR),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    Task is INT-"1", Mach is CHAR-"A",
+    Task is INT-"0", Mach is CHAR-"@",
     assert(forbidMNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-
-
-
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNT(Atom) :-
     \+ Atom = '',
@@ -210,10 +171,8 @@ parseTNT(Atom) :-
     checkCharBounds(CHAR2),
     checkChar(CB,")"),
     checkEmpty(Remainder),
-    Task1 is CHAR1-"A", Task2 is CHAR2-"A",
+    Task1 is CHAR1-"@", Task2 is CHAR2-"@",
     assert(tntNode(Task1,Task2)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-
-
 %Confirms array is of correct form, all nums >= 0, and asserts the results
 parseArray(Atom):-
     split_string(Atom,' ','',AtomList),
@@ -221,23 +180,18 @@ parseArray(Atom):-
     maplist(atom_number(),AtomList,IntList),
     maplist(integer(),IntList),
     maplist(<(0) ,IntList),
-    getMachine(0,Machine),
-    assertArray(0,Machine,IntList).
-
+    getMachine(1,Machine),
+    assertArray(1,Machine,IntList).
 %Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
 getMachine(Check, Machine) :-
     \+ treeNode(_,Check,_), Machine is Check;
     Check =< 8, NewCheck is Check+1, getMachine(NewCheck, Machine).
-
 %Asserts all elements in the list as new treeNodes
 assertArray(_,_,[]).
 assertArray(Task, Machine, [Penalty|Remaining]) :-
     assert(treeNode(Task, Machine, Penalty)),
     NewTask is Task+1,
     assertArray(NewTask, Machine, Remaining).
-
-
-
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNP(Atom) :-
     \+ Atom = '',
@@ -252,14 +206,9 @@ parseTNP(Atom) :-
     checkPenalty(Remainder, Penalty, End),
     Penalty >= 0,
     checkEmpty(End),
-    Task1 is CHAR1-"A", Task2 is CHAR2-"A",
+    Task1 is CHAR1-"@", Task2 is CHAR2-"@",
     assert(tnpNode(Task1,Task2,Penalty)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-
-
 %-------------------------Parsers End------------------------------
-
-
-
 %---------------------Validity Checks Start------------------------
 %Checks if name is of valid form (no spaces)
 hasInternalSpace(X):-
@@ -267,15 +216,12 @@ hasInternalSpace(X):-
     Y>0,
     split_string(X,' ','',Z),
     length(Z,1);
-    write('Error while parsing input file IS'),nl,halt(0).
-
+    write('Error while parsing input file'),nl,halt(0).
 %Checks if partial assignment has already been made to the task or machine
 checkPA(Task, Mach) :-
     \+ fpaNode(Task,_),
     \+ fpaNode(_,Mach);
     write('partial assignment error'),nl,halt(0).
-
-
 %Special check for TNP last number which could be more than one digit
 %!Warning! This predicate is NOT VERSATILE, it only was designed for one use.
 checkPenalty(String, Number, Remainder) :-
@@ -285,30 +231,22 @@ checkPenalty(String, Number, Remainder) :-
     atom_number(H, Number),
     Remainder = T;
     write('invalid task0'),halt(0).
-
-
-
 %Checks format of pairing variabls and throws error if fail
 checkChar(Char, ExpectedChar) :-
     Char =:= ExpectedChar;
     write('invalid task1'),halt(0).
-
 checkCharBounds(Char) :-
     Char >= "A",
     Char =< "H";
     write('invalid task2'),halt(0).
-
-
 checkIntBounds(Int) :-
     Int >= "1",
-    Int =< "7";
+    Int =< "8";
     write('invalid task3'),halt(0).
-
 checkEmpty(Remainder) :-
     Remainder = [];
     Remainder = [""];   %<-- Unlikely to cause issues but can be split off if needed
     write('Error while parsing input file Empty'),nl,halt(0).
-
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check2Tuple(List,Flag) :-
     Flag = 0, List = [H|T], H =:= "(", check2Tuple(T,1);
@@ -320,7 +258,6 @@ check2Tuple(List,Flag) :-
     List = [H|_], H =:= 32, write('Error while parsing input file'),halt(0);  %32 is ascii ''
     List = [_|T], check2Tuple(T,Flag);
     write('Error while parsing input file 2T'),nl,halt(0).
-
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check3Tuple(List,Flag) :-
     Flag = 0, List = [H|T], H =:= "(", check3Tuple(T,1);
@@ -334,66 +271,233 @@ check3Tuple(List,Flag) :-
     List = [H|_], H =:= 32, write('Error while parsing input file'),nl,halt(0);  %32 is ascii ''
     List = [_|T], check3Tuple(T,Flag);
     write('Error while parsing input file 3T'),nl,halt(0).
-
 %------------------------Validity Checks End---------------------------
-
-
-
-
-
-
 %Takes a single element and returns that element without spaces at end
 removeLastSpaces(AtomStart, Return) :- atom_chars(AtomStart, List), reverse(List,Zspace), removeSpaces(Zspace,Z), reverse(Z, AtomFinish), atom_chars(Return, AtomFinish).
-
 removeSpaces(List, ListMinusSpaces) :- List = [H|T], H = '\s', removeSpaces(T, ListMinusSpaces).
 removeSpaces(List, List).
-
 %--------------------------PARSING END--------------------------------
-%--------------------------PARSING END--------------------------------
-
-
 %---------------------------LOGIC START--------------------------------
+logicMaster:-
+    runFPA([0,0,0,0,0,0,0,0],1,Tasks),
+    unassignedTasks(Tasks, [1,2,3,4,5,6,7,8], 1, UnassignedList),
+    write(Tasks),nl,
+    write(UnassignedList),nl,
+    permutation(UnassignedList, PossibleAssignment),
+    write("New possble assignment "), write(PossibleAssignment),nl,
+    %write("Bastpath so far found was: "), write(Tasks), write( " with a penalty of: "), write(Penalty),nl.
+    %write("New permutation"), nl,
+    possibleSol(Tasks,Tasks,PossibleAssignment,1);
+    write("All possibilities checked"),nl,
+    true.
 
 
-% idastar( Start, Solution):
-% Perform IDA* search; Start is the start node
-idastar( Start, Solution) :-
-    retract( next_bound(_)), fail
-    ;
-    asserta( next_bound( 0)),
-    idastarO( Start, Solution).
+possibleSol(Tasks, [], [], 9) :-
+    %write("New Possible Solution Check: "), write(Tasks),nl,
+    Tasks = [H|_],
+    tntCheck(Tasks, H),
+    isBest(Tasks),
+    !,fail.
 
-idastarO( Start, Sol) :-
-    retract( next_bound( Bound)),
-    asserta( next_bound( inf)),
-    f( Start, F),
-    df( [Start], F, Bound, Sol)
-    ;
-    next_bound( NextBound),
-    NextBound < inf,
-    idastarO( Start, Sol).
-% df( Path, F, Bound, Sol):
-% Perform depth-first search within Bound
-% Path is the path from start node so far (in reverse order)
-% F is the f-value of the current node, i.e. the head of Path
-df( [N | Ns], F, Bound, [N | Ns]) :-
-    F =< Bound,
-    goal(N).
-df( [N | Ns], F, Bound, Sol) :-
-    F =< Bound,
-    s( N, Nl), \+ member( Nl, Ns),
-    f( Nl, Fl),
-    df( [N1,N | Ns], Fl, Bound, Sol).
-df( _, F, Bound, _) :-
-    F > Bound,
-    update_next_bound( F),
-    fail.
-update_next_bound( F) :-
-    next_bound( Bound),
-    Bound =< F, !
-    ;
-    retract( next_bound( Bound)),!,
-    asserta( next_bound( F)).
+
+
+
+    %write("goodbye"),nl,fail.
+    %findPen(Tasks
+    %is it best
+    %assert
+    %fail
+
+
+
+isBest(Tasks) :-
+    %write("new is best"),nl,
+    Tasks = [H|Tail],
+    findPenalty(Tasks, H, Penalty,1),
+    setBest(Tasks,Penalty).
+
+
+
+setBest(Tasks, Penalty) :-
+    %write("check best"), nl,
+    bestQual(Best),
+    Penalty < Best,
+    write("new best"), nl,
+    retract(bestQual(_)),
+    assert(bestQual(Penalty)),
+    retract(bestPath(_)),
+    assert(bestPath(Tasks));
+
+    bestQual(_);
+
+    write("first best"), nl,
+    assert(bestQual(Penalty)),
+    assert(bestPath(Tasks)).
+
+
+
+findPenalty([Task1,Task2|Other],FirstTask,NewPenalty, Machine) :-
+    \+ tnpNode(Task1,Task2,_),
+    treeNode(Task1,Machine,BasePenalty),
+    NewMachine is Machine+1,
+    findPenalty([Task2|Other],FirstTask,Penalty,NewMachine),
+    NewPenalty is Penalty+BasePenalty;
+
+    tnpNode(Task1,Task2,TNP),
+    treeNode(Task1,Machine,BasePenalty),
+    NewMachine is Machine+1,
+    findPenalty([Task2|Other],FirstTask,Penalty,NewMachine),
+    NewPenalty is Penalty+TNP+BasePenalty.
+    
+
+
+findPenalty([Task1|_],Task2,NewPenalty,Machine) :-
+    \+ tnpNode(Task1,Task2,_),
+    treeNode(Task1,Machine,BasePenalty),
+    NewPenalty is BasePenalty;
+
+    tnpNode(Task1,Task2,TNP),
+    treeNode(Task1,Machine,BasePenalty),
+    NewPenalty is TNP+BasePenalty.
+
+
+
+
+
+possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
+    NextMachine is Machine+1,
+    member(H,[0]),                              %if head of list is 0
+    \+ forbidMNode(NextTask, Machine),
+    insertTask(Tasks, NextTask, Machine, NewTasks),
+    %write(NewTasks),nl,
+    possibleSol(NewTasks, Tail, RemainTask,NextMachine);
+    NextMachine is Machine+1,
+    possibleSol(Tasks,Tail,[NextTask|RemainTask],NextMachine).
+    
+    %New pred
+    %One of the perm of unassigned
+    %insert head of perm to first 0 (loop for all elements of permutaion)
+    %Check valid
+    %Check quality -> assert if better
+    %fail
+    
+
+tntCheck([Task1,Task2|Other],FirstTask) :-
+    %write("TNT check"),nl,
+    \+ tntNode(Task1,Task2),
+    tntCheck([Task2|Other],FirstTask);
+    !,fail.
+    
+tntCheck([Task1|_],Task2) :-
+    \+ tntNode(Task1,Task2).
+        
+
+
+
+permutation([],[]).
+permutation([X|L],P) :-
+    length(L, Length),
+    permutation(L,L1),
+    insert(X,L1,P).
+
+
+insert(X, List, BiggerList) :-
+    del(X, BiggerList, List).
+
+
+
+del(X,[X|Tail], Tail).
+del(X,[Y|Tail],[Y|Tail1]) :-
+    del(X,Tail,Tail1).
+
+    
+    
+unassignedTasks([H|T],List,8,UnassignedList):-
+    member(H,List),
+    delete(H,List,UnassignedList);
+    List=UnassignedList.
+unassignedTasks([H|T],List,N,UnassignedList):-
+    member(H,List),
+    delete(List,H,Updated),
+    Next is N+1,
+    unassignedTasks(T,Updated, Next, UnassignedList);
+    Next is N+1,
+    unassignedTasks(T,List, Next, UnassignedList).
+runFPA(Sch, 9, Sch).
+runFPA(Sch, Mach, Returned):-
+    Next is Mach+1,
+    safeFPA(Sch,Mach,NewSch),!,
+    runFPA(NewSch,Next,Returned),!.
+safeFPA(Tasks, Mach, Return):-
+    fpaNode(Mach,Task),
+    \+forbidMNode(Mach,Task),
+    insertTask(Tasks, Task,Mach,Return).
+safeFPA(List,Mach,List):-
+    \+fpaNode(Mach,Task);
+    write('FPA'),nl,nl,nl,nl,
+    write('Naughty'),nl,
+    halt(0).
+insertTask([_|T], Task, 1,[Task|T]).
+insertTask([H|T], Task, Assignment,[H|T2]):-
+    NextAssignment is Assignment -1,
+    insertTask(T,Task,NextAssignment,T2).
+%----------------------------LOGIC END----------------------------------
+
+
+printOutput(OutputFile) :-
+    bestPath(Path),
+    bestQual(Qual),
+    writeToFile(Path,Qual,OutputFile);
+    write("No valid solution possible"),nl.
+
+
+
+reformatPath([],PathString,ConvertedString) :- ConvertedString = PathString.
+reformatPath([H|Tail], PathString, ConvertedString) :-
+    mapChar(H,Letter),
+    NewPathString = [Letter|PathString],
+    reformatPath(Tail, NewPathString,ConvertedString).
+
+mapChar(1,"A").
+mapChar(2,"B").
+mapChar(3,"C").
+mapChar(4,"D").
+mapChar(5,"E").
+mapChar(6,"F").
+mapChar(7,"G").
+mapChar(8,"H").
+
+
+
+
+
+%I am not sorry for the code below
+writeToFile([M1,M2,M3,M4,M5,M6,M7,M8],Qual,OutputFile) :-
+    open(OutputFile , write, Stream),
+    mapChar(M1,C1),
+    mapChar(M2,C2),
+    mapChar(M3,C3),
+    mapChar(M4,C4),
+    mapChar(M5,C5),
+    mapChar(M6,C6),
+    mapChar(M7,C7),
+    mapChar(M8,C8),
+    write(Stream, "Solution"), write(Stream, " "),
+    write(Stream, C1), write(Stream, " "),
+    write(Stream, C2), write(Stream, " "),
+    write(Stream, C3), write(Stream, " "),
+    write(Stream, C4), write(Stream, " "),
+    write(Stream, C5), write(Stream, " "),
+    write(Stream, C6), write(Stream, " "),
+    write(Stream, C7), write(Stream, " "),
+    write(Stream, C8),
+    write(Stream, "; Quality: "), 
+    write(Stream, Qual), 
+    close(Stream).
+
+writeToFile(Error,OutputFile).
+
+
 
 
 
@@ -424,6 +528,5 @@ forall(nth0(I, List, E), format('List[~w]=~w~n', [I, E])).
 %List[2]=c
 %List[3]=d
 */
-
 ?-main.
 ?-halt(0).
