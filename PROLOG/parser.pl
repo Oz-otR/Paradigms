@@ -198,7 +198,7 @@ parseArray(Atom):-
 parseArrayElems(TailOf8 ,0) :- 
     TailOf8 = []; %If nothing is left, true
     TailOf8 = [H|Tail], %If something left and it is int, machine penalty error
-    atom_number(H),
+    atom_number(H,_),
     writeToFile(3);
     writeToFile(6).
 
