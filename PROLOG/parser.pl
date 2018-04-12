@@ -1,3 +1,5 @@
+:-initialization sched.
+
 %treeNode(Machine, Task, Penalty) are added during runtime
 %fpaNode(Machine, Task) are added during runtime
 %forbidMNode(Machine, Task) are added during runtime
@@ -7,7 +9,7 @@
 %bestPath().
 %bestQual().
 
-main :-
+sched :-
     %Get the arguments from command line
     current_prolog_flag(argv, Argv),
     nth0(0, Argv, InputFile), % get first argument
@@ -17,7 +19,7 @@ main :-
     open(InputFile, read, Str), %this really doesn't need a comment to explain
     read_file(Str,Lines),
     close(Str),
-    maplist(removeLastSpaces(), Lines, SpacelessLines),
+    maplist(removeLastSpaces, Lines, SpacelessLines),
     generatePredSeeds,
     validInput(SpacelessLines, Out),
     destroyPredSeeds,
@@ -72,6 +74,7 @@ validInput --> name,fpa,forbidM,tnt,machs,tnp.
 name --> after, nameHeader, after, nameBody, arbLines.
 nameHeader --> ['Name:'].
 nameBody --> [X], {hasInternalSpace(X)}.
+
 %DCG for parsing Forced Partial Assignment information
 fpa --> fpaHeader,fpaBody('0').
 fpaHeader --> ['forced partial assignment:'].
@@ -135,11 +138,11 @@ parseFPA(Atom) :-
     atom_codes(Atom, List),
     check2Tuple(List,0),
     List = [OB,INT,COMMA,CHAR,CB|Remainder],
-    checkChar(OB,"("),
+    checkChar(OB,"(",2),
     checkIntBounds(INT),
-    checkChar(COMMA,","),
-    checkCharBounds(CHAR),
-    checkChar(CB,")"),
+    checkChar(COMMA,",",2),
+    checkCharBounds(CHAR,2),
+    checkChar(CB,")",2),
     checkEmpty(Remainder),
     Task is INT-"0", Mach is CHAR-"@",
     checkPA(Task,Mach),
@@ -151,38 +154,65 @@ parseForbid(Atom) :-
     atom_codes(Atom, List),
     check2Tuple(List,0),
     List = [OB,INT,COMMA,CHAR,CB|Remainder],
-    checkChar(OB,"("),
+    checkChar(OB,"(",2),
     checkIntBounds(INT),
-    checkChar(COMMA,","),
-    checkCharBounds(CHAR),
-    checkChar(CB,")"),
+    checkChar(COMMA,",",2),
+    checkCharBounds(CHAR,2),
+    checkChar(CB,")",2),
     checkEmpty(Remainder),
     Task is INT-"0", Mach is CHAR-"@",
     assert(forbidMNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNT(Atom) :-
     \+ Atom = '',
-        \+ Atom = 'machine penalties:',
+    \+ Atom = 'machine penalties:',
     atom_codes(Atom, List),
     check2Tuple(List,0),
     List = [OB,CHAR1,COMMA,CHAR2,CB|Remainder],
-    checkChar(OB,"("),
-    checkCharBounds(CHAR1),
-    checkChar(COMMA,","),
-    checkCharBounds(CHAR2),
-    checkChar(CB,")"),
+    checkChar(OB,"(",2),
+    checkCharBounds(CHAR1,2),
+    checkChar(COMMA,",",2),
+    checkCharBounds(CHAR2,2),
+    checkChar(CB,")",2),
     checkEmpty(Remainder),
     Task1 is CHAR1-"@", Task2 is CHAR2-"@",
     assert(tntNode(Task1,Task2)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+
+
 %Confirms array is of correct form, all nums >= 0, and asserts the results
 parseArray(Atom):-
     split_string(Atom,' ','',AtomList),
-    length(AtomList,8),
-    maplist(atom_number(),AtomList,IntList),
-    maplist(integer(),IntList),
-    maplist(<(0) ,IntList),
+    parseArrayElems(AtomList,8),
+    maplist(atom_number,AtomList,IntList),
     getMachine(1,Machine),
     assertArray(1,Machine,IntList).
+
+     
+%look at first 8
+%if any non >=0 ints, invalid penalty
+%look at elements after the 8 first elements
+%If there are more numbers, machine penalty error
+%If there are more non-numbers, parser error
+
+
+parseArrayElems(TailOf8 ,0) :- 
+    TailOf8 = []; %If nothing is left, true
+    TailOf8 = [H|Tail], %If something left and it is int, machine penalty error
+    atom_number(H),
+    writeToFile(3);
+    writeToFile(6).
+
+
+parseArrayElems([H|Tail], Counter) :-
+    atom_number(H, Number),
+    Number >= 0,
+    NewCounter is Counter-1,
+    parseArrayElems(Tail,NewCounter);
+    writeToFile(5).  %non >=0 ints in first 8, invalid penalty error
+
+parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty error
+
+
 %Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
 getMachine(Check, Machine) :-
     \+ treeNode(_,Check,_), Machine is Check;
@@ -193,17 +223,19 @@ assertArray(Task, Machine, [Penalty|Remaining]) :-
     assert(treeNode(Task, Machine, Penalty)),
     NewTask is Task+1,
     assertArray(NewTask, Machine, Remaining).
+
+
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNP(Atom) :-
     \+ Atom = '',
     atom_codes(Atom, List),
     check3Tuple(List,0),
     List = [OB,CHAR1,COMMA1,CHAR2,COMMA2|Remainder],
-    checkChar(OB,"("),
-    checkCharBounds(CHAR1),
-    checkChar(COMMA1,","),
-    checkCharBounds(CHAR2),
-    checkChar(COMMA2,","),
+    checkChar(OB,"(",4),
+    checkCharBounds(CHAR1,4),
+    checkChar(COMMA1,",",4),
+    checkCharBounds(CHAR2,4),
+    checkChar(COMMA2,",",4),
     checkPenalty(Remainder, Penalty, End),
     Penalty >= 0,
     checkEmpty(End),
@@ -235,26 +267,35 @@ checkPenalty(String, Number, Remainder) :-
     Remainder = T;
     writeToFile(4),
     write('invalid task0'),halt(0).
+
+
 %Checks format of pairing variabls and throws error if fail
-checkChar(Char, ExpectedChar) :-
+
+%Call with Error 4 for Soft, 2 for Hard
+checkChar(Char, ExpectedChar, Error) :-
     Char =:= ExpectedChar;
-    writeToFile(4),
+    writeToFile(Error),
     write('invalid task1'),halt(0).
-checkCharBounds(Char) :-
+
+checkCharBounds(Char, Error) :-
     Char >= "A",
     Char =< "H";
-    writeToFile(4),
+    writeToFile(Error),
     write('invalid task2'),halt(0).
+
 checkIntBounds(Int) :-
     Int >= "1",
     Int =< "8";
-    writeToFile(4),
+    writeToFile(2),
     write('invalid task3'),halt(0).
+
 checkEmpty(Remainder) :-
     Remainder = [];
     Remainder = [""];   %<-- Unlikely to cause issues but can be split off if needed
     writeToFile(6),
     write('Error while parsing input file Empty'),nl,halt(0).
+
+
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check2Tuple(List,Flag) :-
     Flag = 0, List = [H|T], H =:= "(", check2Tuple(T,1);
@@ -283,8 +324,17 @@ check3Tuple(List,Flag) :-
     write('Error while parsing input file 3T'),nl,halt(0).
 %------------------------Validity Checks End---------------------------
 %Takes a single element and returns that element without spaces at end
-removeLastSpaces(AtomStart, Return) :- atom_chars(AtomStart, List), reverse(List,Zspace), removeSpaces(Zspace,Z), reverse(Z, AtomFinish), atom_chars(Return, AtomFinish).
-removeSpaces(List, ListMinusSpaces) :- List = [H|T], H = '\s', removeSpaces(T, ListMinusSpaces).
+removeLastSpaces(AtomStart, Return) :-
+    atom_chars(AtomStart, List), 
+    reverse(List,Zspace), 
+    removeSpaces(Zspace,Z), 
+    reverse(Z, AtomFinish), 
+    atom_chars(Return, AtomFinish).
+
+removeSpaces(List, ListMinusSpaces) :- 
+    List = [H|T], H = '\s', 
+    removeSpaces(T, ListMinusSpaces).
+
 removeSpaces(List, List).
 %--------------------------PARSING END--------------------------------
 %---------------------------LOGIC START--------------------------------
@@ -424,8 +474,8 @@ safeFPA(Tasks, Mach, Return):-
     insertTask(Tasks, Task,Mach,Return).
 safeFPA(List,Mach,List):-
     \+fpaNode(Mach,Task);
-    writeToFile(1),
-    write('FPA'),nl,nl,nl,nl,
+    writeToFile(7),
+    write('No valid solution possible!'),nl,nl,nl,nl,
     halt(0).
 insertTask([_|T], Task, 1,[Task|T]).
 insertTask([H|T], Task, Assignment,[H|T2]):-
@@ -497,31 +547,3 @@ writeToFile(Error) :-
     close(Stream),
     halt(0).
 
-/*
-%%To_Do
-%Define goal function, define output functionfor error messages, best path solutionandno valid solution.
-%Best_path
-bestPath = [].
-%bestScore
-%Define functions that have the best possible machine task assignmentas to resolve
-%Getting the current command line argument
-%Open the file of command line argument 2as the file foroutput
-%tell(outputFile).
-told
-%Write error message/no valid solution/best solution in proper format to file
-%%get_element_by_index
-nth0(1, [a, b, c, d], E) % E = b
-%get_index_by_element
-nth0(I, [a, b, c, d], b) % I = 1
-%enumerate_elements_with_their_corresponding_indexes
-List = [a, b, c, d],
-forall(nth0(I, List, E), format('List[~w]=~w~n', [I, E])).
-%%example_above_prints
-%Conclusion = "Solution: "
-%List[0]=a
-%List[1]=b
-%List[2]=c
-%List[3]=d
-*/
-?-main.
-?-halt(0).
