@@ -12,6 +12,7 @@ main :-
     current_prolog_flag(argv, Argv),
     nth0(0, Argv, InputFile), % get first argument
     nth0(1, Argv, OutputFile), % get second argument
+    assert(outputFileName(OutputFile)),
     %Open the file passed into the program on command line
     open(InputFile, read, Str), %this really doesn't need a comment to explain
     read_file(Str,Lines),
@@ -216,11 +217,13 @@ hasInternalSpace(X):-
     Y>0,
     split_string(X,' ','',Z),
     length(Z,1);
+    writeToFile(6),
     write('Error while parsing input file'),nl,halt(0).
 %Checks if partial assignment has already been made to the task or machine
 checkPA(Task, Mach) :-
     \+ fpaNode(Task,_),
     \+ fpaNode(_,Mach);
+    writeToFile(1),
     write('partial assignment error'),nl,halt(0).
 %Special check for TNP last number which could be more than one digit
 %!Warning! This predicate is NOT VERSATILE, it only was designed for one use.
@@ -230,22 +233,27 @@ checkPenalty(String, Number, Remainder) :-
     AtomList = [H|T],
     atom_number(H, Number),
     Remainder = T;
+    writeToFile(4),
     write('invalid task0'),halt(0).
 %Checks format of pairing variabls and throws error if fail
 checkChar(Char, ExpectedChar) :-
     Char =:= ExpectedChar;
+    writeToFile(4),
     write('invalid task1'),halt(0).
 checkCharBounds(Char) :-
     Char >= "A",
     Char =< "H";
+    writeToFile(4),
     write('invalid task2'),halt(0).
 checkIntBounds(Int) :-
     Int >= "1",
     Int =< "8";
+    writeToFile(4),
     write('invalid task3'),halt(0).
 checkEmpty(Remainder) :-
     Remainder = [];
     Remainder = [""];   %<-- Unlikely to cause issues but can be split off if needed
+    writeToFile(6),
     write('Error while parsing input file Empty'),nl,halt(0).
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check2Tuple(List,Flag) :-
@@ -255,8 +263,9 @@ check2Tuple(List,Flag) :-
     Flag = 3, List = [H|T], \+ H =:= 32,check2Tuple(T,4);
     Flag = 4, List = [H|T], H =:= ")", check2Tuple(T,5);
     Flag = 5;
-    List = [H|_], H =:= 32, write('Error while parsing input file'),halt(0);  %32 is ascii ''
+    List = [H|_], H =:= 32,writeToFile(6), write('Error while parsing input file'),halt(0);  %32 is ascii ''
     List = [_|T], check2Tuple(T,Flag);
+    writeToFile(6),
     write('Error while parsing input file 2T'),nl,halt(0).
 %Checks that line starts with (_arb_,_arb_), Flag should always be started as 0
 check3Tuple(List,Flag) :-
@@ -268,8 +277,9 @@ check3Tuple(List,Flag) :-
     Flag = 5, List = [H|T], \+ H =:= 32,check3Tuple(T,6);
     Flag = 6, List = [H|T], H =:= ")", check3Tuple(T,7);
     Flag = 7;
-    List = [H|_], H =:= 32, write('Error while parsing input file'),nl,halt(0);  %32 is ascii ''
+    List = [H|_], H =:= 32, writeToFile(6),write('Error while parsing input file'),nl,halt(0);  %32 is ascii ''
     List = [_|T], check3Tuple(T,Flag);
+    writeToFile(6),
     write('Error while parsing input file 3T'),nl,halt(0).
 %------------------------Validity Checks End---------------------------
 %Takes a single element and returns that element without spaces at end
@@ -327,14 +337,10 @@ setBest(Tasks, Penalty) :-
     assert(bestQual(Penalty)),
     retract(bestPath(_)),
     assert(bestPath(Tasks));
-
     bestQual(_);
-
     write("first best"), nl,
     assert(bestQual(Penalty)),
     assert(bestPath(Tasks)).
-
-
 
 findPenalty([Task1,Task2|Other],FirstTask,NewPenalty, Machine) :-
     \+ tnpNode(Task1,Task2,_),
@@ -348,21 +354,14 @@ findPenalty([Task1,Task2|Other],FirstTask,NewPenalty, Machine) :-
     NewMachine is Machine+1,
     findPenalty([Task2|Other],FirstTask,Penalty,NewMachine),
     NewPenalty is Penalty+TNP+BasePenalty.
-    
-
 
 findPenalty([Task1|_],Task2,NewPenalty,Machine) :-
     \+ tnpNode(Task1,Task2,_),
     treeNode(Task1,Machine,BasePenalty),
     NewPenalty is BasePenalty;
-
     tnpNode(Task1,Task2,TNP),
     treeNode(Task1,Machine,BasePenalty),
     NewPenalty is TNP+BasePenalty.
-
-
-
-
 
 possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
     NextMachine is Machine+1,
@@ -373,26 +372,22 @@ possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
     possibleSol(NewTasks, Tail, RemainTask,NextMachine);
     NextMachine is Machine+1,
     possibleSol(Tasks,Tail,[NextTask|RemainTask],NextMachine).
-    
+
     %New pred
     %One of the perm of unassigned
     %insert head of perm to first 0 (loop for all elements of permutaion)
     %Check valid
     %Check quality -> assert if better
     %fail
-    
 
 tntCheck([Task1,Task2|Other],FirstTask) :-
     %write("TNT check"),nl,
     \+ tntNode(Task1,Task2),
     tntCheck([Task2|Other],FirstTask);
     !,fail.
-    
+
 tntCheck([Task1|_],Task2) :-
     \+ tntNode(Task1,Task2).
-        
-
-
 
 permutation([],[]).
 permutation([X|L],P) :-
@@ -400,18 +395,13 @@ permutation([X|L],P) :-
     permutation(L,L1),
     insert(X,L1,P).
 
-
 insert(X, List, BiggerList) :-
     del(X, BiggerList, List).
-
-
 
 del(X,[X|Tail], Tail).
 del(X,[Y|Tail],[Y|Tail1]) :-
     del(X,Tail,Tail1).
 
-    
-    
 unassignedTasks([H|T],List,8,UnassignedList):-
     member(H,List),
     delete(H,List,UnassignedList);
@@ -434,8 +424,8 @@ safeFPA(Tasks, Mach, Return):-
     insertTask(Tasks, Task,Mach,Return).
 safeFPA(List,Mach,List):-
     \+fpaNode(Mach,Task);
+    writeToFile(1),
     write('FPA'),nl,nl,nl,nl,
-    write('Naughty'),nl,
     halt(0).
 insertTask([_|T], Task, 1,[Task|T]).
 insertTask([H|T], Task, Assignment,[H|T2]):-
@@ -448,9 +438,7 @@ printOutput(OutputFile) :-
     bestPath(Path),
     bestQual(Qual),
     writeToFile(Path,Qual,OutputFile);
-    write("No valid solution possible"),nl.
-
-
+    writetoFile(8),nl.
 
 reformatPath([],PathString,ConvertedString) :- ConvertedString = PathString.
 reformatPath([H|Tail], PathString, ConvertedString) :-
@@ -467,8 +455,13 @@ mapChar(6,"F").
 mapChar(7,"G").
 mapChar(8,"H").
 
-
-
+mapError(1,"partial assignment error").
+mapError(2,"invalid machine/task").
+mapError(3,"machine penalty error").
+mapError(4,"invalid task").
+mapError(5,"invalid penalty").
+mapError(6,"Error while parsing input file").
+mapError(7,"No valid solution possible!").
 
 
 %I am not sorry for the code below
@@ -491,16 +484,18 @@ writeToFile([M1,M2,M3,M4,M5,M6,M7,M8],Qual,OutputFile) :-
     write(Stream, C6), write(Stream, " "),
     write(Stream, C7), write(Stream, " "),
     write(Stream, C8),
-    write(Stream, "; Quality: "), 
-    write(Stream, Qual), 
-    close(Stream).
+    write(Stream, "; Quality: "),
+    write(Stream, Qual),
+    close(Stream),
+    halt(0).
 
-writeToFile(Error,OutputFile).
-
-
-
-
-
+writeToFile(Error) :-
+    outputFileName(X),
+    open(X, write, Stream),
+    mapError(Error, Message),
+    write(Stream, Message),
+    close(Stream),
+    halt(0).
 
 /*
 %%To_Do
