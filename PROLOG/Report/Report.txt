@@ -14,8 +14,16 @@ Error8
     java, haskell: invalid penalty
     Cause: recognizes letter character in penalty as task in TNP.
 
-    
+Error9
+    prolog: Program crashes (No output)
+    java,haskell: Error while parsing input file
+    Cause: Missing 'Name:' flag causes program to crash.
+
 Error10
     prolog: Error while parsing input file
     java,haskell: No valid solution possible!
     Cause: forbid on all 8 machs for task A
+
+Error11
+    Error stype is same as error10.
+    Cause: direct forced assignment on too-near tasks penalty.
