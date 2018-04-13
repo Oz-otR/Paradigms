@@ -118,7 +118,7 @@ specialFailCase --> {write("Check for :"),nl}, ['too-near penalities:'],{writeTo
 %do we need two afters here?
 machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,marbLines; {writeToFile(3)}.
 mN --> [X], {parseArray(X);writeToFile(6)}; writeToFile(6).
-%mNSpecial --> [X], {parseArray(X);writeToFile(3)}; writeToFile(3).
+mNSpecial --> [X], {parseArray(X);writeToFile(3)}; writeToFile(3).
 %DCG for parsing Too-near Penalty information
 tnp --> tnpHeader,tnpBody('0').
 tnpHeader --> ['too-near penalities'].
@@ -137,7 +137,7 @@ after --> [''],after.
 after --> [].
 
 %Special DCG for machine penalty (it needs to return )
-marbLines --> {write("arb ome"),nl},[''],after; {write("special check"),nl},specialFailCase;{write("file"),nl},{writeToFile(3)}.
+marbLines --> {write("arb ome"),nl},[''],after; {write("special check"),nl},specialFailCase;{writeToFile(6)}.
 
 %----------------------DCG For Parsing End------------------------
 %-------------------------Parsers Start------------------------------
