@@ -22,7 +22,7 @@ sched :-
     maplist(removeLastSpaces, Lines, SpacelessLines),
     generatePredSeeds,
     validInput(SpacelessLines, Out),
-    destroyPredSeeds,
+	destroyPredSeeds,
     printAll,
     \+ logicMaster(),nl,
 	write("Print to output"),nl,
@@ -244,7 +244,13 @@ parseTNP(Atom) :-
     Penalty >= 0,
     checkEmpty(End),
     Task1 is CHAR1-"@", Task2 is CHAR2-"@",
-    assert(tnpNode(Task1,Task2,Penalty)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+	\+ retractIfExist(Task1,Task2),
+    assert(tnpNode(Task1,Task2,Penalty)).
+
+	
+retractIfExist(Task1,Task2) :-
+	retract(tnpNode(Task1,Task2,_)), fail.
+        
 %-------------------------Parsers End------------------------------
 %---------------------Validity Checks Start------------------------
 %Checks if name is of valid form (no spaces)
