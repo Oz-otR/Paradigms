@@ -533,7 +533,7 @@ writeToFile([M1,M2,M3,M4,M5,M6,M7,M8],Qual,OutputFile) :-
     write(Stream, C8),
     write(Stream, "; Quality: "),
     write(Stream, Qual),
-    close(Stream),
+    close(Stream),    write(C1), write(" "),write(C2),write(" "), write(C3),write(" "),write(C4),write(" ") ,write(C5), write(" "),write(C6), write(" "),write(C7),write(" "), write(C8), write("Quality"), write(" "),write(Qual),
     halt(0).
 
 writeToFile(Error) :-
