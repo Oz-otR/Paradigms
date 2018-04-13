@@ -1,3 +1,8 @@
+Error6
+    prolog: A,F,D,G,H,C,B,E with Q: 6099
+    java: A,F,D,G,H,C,B,E with Q: 6396
+    Java result is checked manually.
+    Cause: Duplicate TNP is not overwritten to last assignment.
 
 Error7
     prolog: invalid penalty
@@ -13,3 +18,8 @@ Error9
     prolog: Program crashes (No output)
     java,haskell: Error while parsing input file
     Cause: Missing 'Name:' flag causes program to crash.
+    
+Error10
+    prolog: Error while parsing input file
+    java,haskell: No valid solution possible!
+    Cause: forbid on all 8 machs for task A
