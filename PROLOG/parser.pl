@@ -502,8 +502,9 @@ printOutput(OutputFile) :-
     bestPath(Path),
     bestQual(Qual),
     writeToFile(Path,Qual,OutputFile);
-    writeToFile(8),nl.
-
+    writeToFile(7),nl.
+	
+	
 reformatPath([],PathString,ConvertedString) :- ConvertedString = PathString.
 reformatPath([H|Tail], PathString, ConvertedString) :-
     mapChar(H,Letter),
