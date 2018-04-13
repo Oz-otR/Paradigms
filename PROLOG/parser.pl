@@ -112,10 +112,12 @@ machs --> machsHeader,after,machsBody,marbLines.
 machsHeader --> ['machine penalties:'].
 %do we need two afters here?
 machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN; {writeToFile(3)}.
-mN --> [X], {parseArray(X)}; writeToFile(3).
+mN --> [X], {parseArray(X);writeToFile(6)}; writeToFile(6).
+
 %DCG for parsing Too-near Penalty information
 tnp --> tnpHeader,tnpBody('0').
-tnpHeader --> ['too-near penalities'].
+tnpHeader --> ['too-near penalities';'too-near penalities:
+',{writeToFile(6)}].
 tnpBody(Flag) --> tnpEatPair(NewFlag),
         {\+ NewFlag = '2'}, tnpBody(NewFlag) ;
         {Flag = '1'}, [];
@@ -131,7 +133,8 @@ after --> [''],after.
 after --> [].
 
 %Special DCG for machine penalty (it needs to return )
-marbLines --> [''],after; mN,{writeToFile(3)};{writeToFile(6)}.
+marbLines -->  {write("Check fore :"),nl}, ["too-near penalities:"],{writeToFile(6)};{write("marbs alt"),nl},[''], after; mN,{writeToFile(6)};{writeToFile(6)}.
+
 
 %----------------------DCG For Parsing End------------------------
 %-------------------------Parsers Start------------------------------
@@ -140,7 +143,9 @@ parseFPA(Atom) :-
     \+ Atom = '',
     \+ Atom = 'forbidden machine:',
     atom_codes(Atom, List),
+    write("Convert to list"),nl,
     check2Tuple(List,0),
+    write("This should not be seen"),nl,
     List = [OB,INT,COMMA,CHAR,CB|Remainder],
     checkChar(OB,"(",2),
     checkIntBounds(INT),
@@ -186,7 +191,9 @@ parseTNT(Atom) :-
 parseArray(Atom):-
     write(Atom),nl,
     split_string(Atom,' ','',AtomList),
+    write("Before check"),nl,
     length(AtomList, 8),
+    write("After check"),nl,
     write("past length check"),nl,
     parseArrayElems(AtomList,8),
     maplist(atom_number,AtomList,IntList),
