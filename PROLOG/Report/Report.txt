@@ -8,3 +8,8 @@ Error7
     prolog: invalid penalty
     java, haskell: Error while parsing input file
     Cause: Recognize whitespace at start of the line as a penalty.
+
+Error8
+    prolog: invalid task
+    java, haskell: invalid penalty
+    Cause: recognizes letter character in penalty as task in TNP.
