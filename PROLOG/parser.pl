@@ -16,16 +16,16 @@ sched :-
     nth0(1, Argv, OutputFile), % get second argument
     assert(outputFileName(OutputFile)),
     %Open the file passed into the program on command line
-    open(InputFile, read, Str), %this really doesn't need a comment to explain
+    open(InputFile, read, Str), 
     read_file(Str,Lines),
     close(Str),
     maplist(removeLastSpaces, Lines, SpacelessLines),
     generatePredSeeds,
     validInput(SpacelessLines, Out),
-	destroyPredSeeds,
+    destroyPredSeeds,
     printAll,
     \+ logicMaster(),nl,
-	write("Print to output"),nl,
+    write("Print to output"),nl,
     printOutput(OutputFile).
 
 
@@ -192,8 +192,7 @@ parseArray(Atom):-
     maplist(atom_number,AtomList,IntList),
     getMachine(1,Machine),
     assertArray(Machine,1,IntList).
-
-     
+ 
 %look at first 8
 %if any non >=0 ints, invalid penalty
 %look at elements after the 8 first elements
@@ -211,15 +210,16 @@ parseArrayElems(TailOf8 ,0) :-
 
 parseArrayElems([H|Tail], Counter) :-
     \+ H = '',
-	\+ H = "",
-	atom_number(H, Number),
+    \+ H = "",
+    atom_number(H, Number),
+    integer(Number),
     Number >= 0,
     NewCounter is Counter-1,
     parseArrayElems(Tail,NewCounter);
-	\+ H = '',
-	\+ H = "",
+    \+ H = '',
+    \+ H = "",
     writeToFile(5);
-	writeToFile(6).  %non >=0 ints in first 8, invalid penalty error
+    writeToFile(6).  %non >=0 ints in first 8, invalid penalty error
 
 parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty error
 
@@ -227,10 +227,10 @@ parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty
 %Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
 getMachine(Check, Machine) :-
     \+ treeNode(Check,_,_),
-	Machine is Check;
+    Machine is Check;
     Check =< 8,
-	NewCheck is Check+1,
-	getMachine(NewCheck, Machine).
+    NewCheck is Check+1,
+    getMachine(NewCheck, Machine).
 %Asserts all elements in the list as new treeNodes
 assertArray(_,_,[]).
 assertArray(Machine, Task, [Penalty|Remaining]) :-
@@ -254,12 +254,12 @@ parseTNP(Atom) :-
     Penalty >= 0,
     checkEmpty(End),
     Task1 is CHAR1-"@", Task2 is CHAR2-"@",
-	\+ retractIfExist(Task1,Task2),
+    \+ retractIfExist(Task1,Task2),
     assert(tnpNode(Task1,Task2,Penalty)).
 
-	
+    
 retractIfExist(Task1,Task2) :-
-	retract(tnpNode(Task1,Task2,_)), fail.
+    retract(tnpNode(Task1,Task2,_)), fail.
         
 %-------------------------Parsers End------------------------------
 %---------------------Validity Checks Start------------------------
@@ -306,7 +306,7 @@ checkCharBounds(Char, Error) :-
 checkIntBounds(Int) :-
     Int >= "1",
     Int =< "8";
-	%write('invalid task3'),halt(0),
+    %write('invalid task3'),halt(0),
     writeToFile(2).
 
 checkEmpty(Remainder) :-
@@ -364,26 +364,22 @@ logicMaster:-
     write(Tasks),nl,
     write(UnassignedList),nl,!,
     permutation(UnassignedList, PossibleAssignment),
-	%\+ printIf(PossibleAssignment, [4,7,5,1,6,2,8], "Checking the best solution"),
+    %\+ printIf(PossibleAssignment, [4,7,5,1,6,2,8], "Checking the best solution"),
     %write("New possble assignment "), write(PossibleAssignment),nl,
     %write("Bastpath so far found was: "), write(Tasks), write( " with a penalty of: "), write(Penalty),nl.
     %write("New permutation"), nl,
     possibleSol(Tasks,Tasks,PossibleAssignment,1).
 
-	%Debug tool
+    %Debug tool
 printIf(Check, Trigger, Message) :-
-	Check = Trigger,
-	write(Message),nl,fail.
-	
-	
-
+    Check = Trigger,
+    write(Message),nl,fail.
+    
 isBest(Tasks) :-
     %write("new is best"),nl,
     Tasks = [H|Tail],
     findPenalty(Tasks, H, Penalty,1),
     setBest(Tasks,Penalty).
-
-
 
 setBest(Tasks, Penalty) :-
     %write("check best"), nl,
@@ -399,7 +395,6 @@ setBest(Tasks, Penalty) :-
     assert(bestQual(Penalty)),
     assert(bestPath(Tasks)).
 
-	
 findPenalty([Task1,Task2|Other],FirstTask,NewPenalty, Machine) :-
     \+ tnpNode(Task1,Task2,_),
     treeNode(Machine,Task1,BasePenalty),
@@ -421,28 +416,23 @@ findPenalty([Task1|_],Task2,NewPenalty,Machine) :-
     treeNode(Machine,Task1,BasePenalty),
     NewPenalty is TNP+BasePenalty.
 
-	
-	
 possibleSol(Tasks,_,[],_) :-
-	%\+ printIf(Tasks, [3,4,7,5,1,6,2,8], "Best possible solution found"),
+    %\+ printIf(Tasks, [3,4,7,5,1,6,2,8], "Best possible solution found"),
     %write("New Possible Solution Check: "), write(Tasks),nl,
     Tasks = [H|_],
     tntCheck(Tasks, H),
     isBest(Tasks),
     !,fail.
-	
+    
 possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
     NextMachine is Machine+1,
     member(H,[0]),                              %If head of list is 0
     \+ forbidMNode(Machine, NextTask),
     insertTask(Tasks, NextTask, Machine, NewTasks),
     possibleSol(NewTasks, Tail, RemainTask,NextMachine);
-	\+ member(H,[0]),							%This is taken when H is not 0
+    \+ member(H,[0]),                           %This is taken when H is not 0
     NextMachine is Machine+1,
     possibleSol(Tasks,Tail,[NextTask|RemainTask],NextMachine).
-
-	
-	
 
 tntCheck([Task1,Task2|Other],FirstTask) :-
     %write("TNT check"),nl,
@@ -470,6 +460,7 @@ unassignedTasks([H|T],List,8,UnassignedList):-
     member(H,List),
     delete(List,H,UnassignedList);
     List=UnassignedList.
+
 unassignedTasks([H|T],List,N,UnassignedList):-
     member(H,List),
     delete(List,H,Updated),
@@ -477,20 +468,25 @@ unassignedTasks([H|T],List,N,UnassignedList):-
     unassignedTasks(T,Updated, Next, UnassignedList);
     Next is N+1,
     unassignedTasks(T,List, Next, UnassignedList).
+
 runFPA(Sch, 9, Sch).
+
 runFPA(Sch, Mach, Returned):-
     Next is Mach+1,
     safeFPA(Sch,Mach,NewSch),!,
     runFPA(NewSch,Next,Returned),!.
+
 safeFPA(Tasks, Mach, Return):-
     fpaNode(Mach,Task),
     \+forbidMNode(Mach,Task),
     insertTask(Tasks, Task,Mach,Return).
+
 safeFPA(List,Mach,List):-
     \+fpaNode(Mach,Task);
     writeToFile(7),
     write('No valid solution possible!'),nl,nl,nl,nl,
     halt(0).
+
 insertTask([_|T], Task, 1,[Task|T]).
 insertTask([H|T], Task, Assignment,[H|T2]):-
     NextAssignment is Assignment -1,
@@ -503,8 +499,8 @@ printOutput(OutputFile) :-
     bestQual(Qual),
     writeToFile(Path,Qual,OutputFile);
     writeToFile(7),nl.
-	
-	
+    
+    
 reformatPath([],PathString,ConvertedString) :- ConvertedString = PathString.
 reformatPath([H|Tail], PathString, ConvertedString) :-
     mapChar(H,Letter),
@@ -527,7 +523,6 @@ mapError(4,"invalid task").
 mapError(5,"invalid penalty").
 mapError(6,"Error while parsing input file").
 mapError(7,"No valid solution possible!").
-
 
 %I am not sorry for the code below
 writeToFile([M1,M2,M3,M4,M5,M6,M7,M8],Qual,OutputFile) :-
@@ -561,4 +556,3 @@ writeToFile(Error) :-
     write(Stream, Message),
     close(Stream),
     halt(0).
-
