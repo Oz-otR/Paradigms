@@ -15,7 +15,7 @@ sched :-
     nth0(1, Argv, OutputFile), % get second argument
     assert(outputFileName(OutputFile)),
     %Open the file passed into the program on command line
-    open(InputFile, read, Str), 
+    open(InputFile, read, Str),
     read_file(Str,Lines),
     close(Str),
     maplist(removeLastSpaces, Lines, SpacelessLines),
@@ -108,16 +108,20 @@ tntEatPair(NewFlag) -->
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
 %DCG for parsing Machine Penalty information
-machs --> machsHeader,after,machsBody,marbLines.
+machs --> machsHeader,after,machsBody.
 machsHeader --> ['machine penalties:'].
-%do we need two afters here?
-machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN; {writeToFile(3)}.
-mN --> [X], {parseArray(X);writeToFile(6)}; writeToFile(6).
 
+
+specialFailCase --> {write("Check for :"),nl}, ['too-near penalities:'],{writeToFile(6)}.
+
+
+%do we need two afters here?
+machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,marbLines; {writeToFile(3)}.
+mN --> [X], {parseArray(X);writeToFile(6)}; writeToFile(6).
+%mNSpecial --> [X], {parseArray(X);writeToFile(3)}; writeToFile(3).
 %DCG for parsing Too-near Penalty information
 tnp --> tnpHeader,tnpBody('0').
-tnpHeader --> ['too-near penalities';'too-near penalities:
-',{writeToFile(6)}].
+tnpHeader --> ['too-near penalities'].
 tnpBody(Flag) --> tnpEatPair(NewFlag),
         {\+ NewFlag = '2'}, tnpBody(NewFlag) ;
         {Flag = '1'}, [];
@@ -133,8 +137,7 @@ after --> [''],after.
 after --> [].
 
 %Special DCG for machine penalty (it needs to return )
-marbLines -->  {write("Check fore :"),nl}, ["too-near penalities:"],{writeToFile(6)};{write("marbs alt"),nl},[''], after; mN,{writeToFile(6)};{writeToFile(6)}.
-
+marbLines --> {write("arb ome"),nl},[''],after; {write("special check"),nl},specialFailCase;{write("file"),nl},{writeToFile(3)}.
 
 %----------------------DCG For Parsing End------------------------
 %-------------------------Parsers Start------------------------------
@@ -143,9 +146,7 @@ parseFPA(Atom) :-
     \+ Atom = '',
     \+ Atom = 'forbidden machine:',
     atom_codes(Atom, List),
-    write("Convert to list"),nl,
     check2Tuple(List,0),
-    write("This should not be seen"),nl,
     List = [OB,INT,COMMA,CHAR,CB|Remainder],
     checkChar(OB,"(",2),
     checkIntBounds(INT),
@@ -185,15 +186,13 @@ parseTNT(Atom) :-
     checkChar(CB,")",2),
     checkEmpty(Remainder),
     Task1 is CHAR1-"@", Task2 is CHAR2-"@",
-    assert(tntNode(Task1,Task2)).        
+    assert(tntNode(Task1,Task2)).
 
 %Confirms array is of correct form, all nums >= 0, and asserts the results
 parseArray(Atom):-
     write(Atom),nl,
     split_string(Atom,' ','',AtomList),
-    write("Before check"),nl,
     length(AtomList, 8),
-    write("After check"),nl,
     write("past length check"),nl,
     parseArrayElems(AtomList,8),
     maplist(atom_number,AtomList,IntList),
@@ -201,7 +200,7 @@ parseArray(Atom):-
     assertArray(Machine,1,IntList);
     write("ALT error"),nl,
     writeToFile(3).
- 
+
 %look at first 8
 %if any non >=0 ints, invalid penalty
 %look at elements after the 8 first elements
@@ -209,7 +208,7 @@ parseArray(Atom):-
 %If there are more non-numbers, parser error
 
 
-parseArrayElems(TailOf8 ,0) :- 
+parseArrayElems(TailOf8 ,0) :-
     TailOf8 = []; %If nothing is left, true
     TailOf8 = [H|Tail], %If something left and it is int, machine penalty error
     atom_number(H,_),
@@ -264,10 +263,10 @@ parseTNP(Atom) :-
     \+ retractIfExist(Task1,Task2),
     assert(tnpNode(Task1,Task2,Penalty)).
 
-    
+
 retractIfExist(Task1,Task2) :-
     retract(tnpNode(Task1,Task2,_)), fail.
-        
+
 %-------------------------Parsers End------------------------------
 %---------------------Validity Checks Start------------------------
 %Checks if name is of valid form (no spaces)
@@ -352,14 +351,14 @@ check3Tuple(List,Flag) :-
 %------------------------Validity Checks End---------------------------
 %Takes a single element and returns that element without spaces at end
 removeLastSpaces(AtomStart, Return) :-
-    atom_chars(AtomStart, List), 
-    reverse(List,Zspace), 
-    removeSpaces(Zspace,Z), 
-    reverse(Z, AtomFinish), 
+    atom_chars(AtomStart, List),
+    reverse(List,Zspace),
+    removeSpaces(Zspace,Z),
+    reverse(Z, AtomFinish),
     atom_chars(Return, AtomFinish).
 
-removeSpaces(List, ListMinusSpaces) :- 
-    List = [H|T], H = '\s', 
+removeSpaces(List, ListMinusSpaces) :-
+    List = [H|T], H = '\s',
     removeSpaces(T, ListMinusSpaces).
 
 removeSpaces(List, List).
@@ -381,7 +380,7 @@ logicMaster:-
 printIf(Check, Trigger, Message) :-
     Check = Trigger,
     write(Message),nl,fail.
-    
+
 isBest(Tasks) :-
     %write("new is best"),nl,
     Tasks = [H|Tail],
@@ -430,7 +429,7 @@ possibleSol(Tasks,_,[],_) :-
     tntCheck(Tasks, H),
     isBest(Tasks),
     !,fail.
-    
+
 possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
     NextMachine is Machine+1,
     member(H,[0]),                              %If head of list is 0
