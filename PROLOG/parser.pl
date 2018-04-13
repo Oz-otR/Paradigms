@@ -25,7 +25,7 @@ sched :-
     destroyPredSeeds,
     printAll,
     \+ logicMaster(),nl,
-    %write("Print to output"),nl,
+	write("Print to output"),nl,
     printOutput(OutputFile).
 
 
@@ -217,10 +217,10 @@ parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty
 %Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
 getMachine(Check, Machine) :-
     \+ treeNode(Check,_,_),
-    Machine is Check;
+	Machine is Check;
     Check =< 8,
-    NewCheck is Check+1,
-    getMachine(NewCheck, Machine).
+	NewCheck is Check+1,
+	getMachine(NewCheck, Machine).
 %Asserts all elements in the list as new treeNodes
 assertArray(_,_,[]).
 assertArray(Machine, Task, [Penalty|Remaining]) :-
@@ -290,8 +290,8 @@ checkCharBounds(Char, Error) :-
 checkIntBounds(Int) :-
     Int >= "1",
     Int =< "8";
-    writeToFile(2),
-    write('invalid task3'),halt(0).
+	%write('invalid task3'),halt(0),
+    writeToFile(2).
 
 checkEmpty(Remainder) :-
     Remainder = [];
@@ -348,27 +348,18 @@ logicMaster:-
     write(Tasks),nl,
     write(UnassignedList),nl,!,
     permutation(UnassignedList, PossibleAssignment),
-    %\+ printIf(PossibleAssignment, [4,7,5,1,6,2,8], "Checking the best solution"),
+	%\+ printIf(PossibleAssignment, [4,7,5,1,6,2,8], "Checking the best solution"),
     %write("New possble assignment "), write(PossibleAssignment),nl,
     %write("Bastpath so far found was: "), write(Tasks), write( " with a penalty of: "), write(Penalty),nl.
     %write("New permutation"), nl,
     possibleSol(Tasks,Tasks,PossibleAssignment,1).
 
-    %Debug tool
+	%Debug tool
 printIf(Check, Trigger, Message) :-
-    Check = Trigger,
-    write(Message),nl,fail.
-    
-
-possibleSol(Tasks, [], [], 9) :-
-    %\+ printIf(Tasks, [3,4,7,5,1,6,2,8], "Best possible solution found"),
-    %write("New Possible Solution Check: "), write(Tasks),nl,
-    Tasks = [H|_],
-    tntCheck(Tasks, H),
-    isBest(Tasks),
-    !,fail.
-
-
+	Check = Trigger,
+	write(Message),nl,fail.
+	
+	
 
 isBest(Tasks) :-
     %write("new is best"),nl,
@@ -388,11 +379,11 @@ setBest(Tasks, Penalty) :-
     retract(bestPath(_)),
     assert(bestPath(Tasks));
     bestQual(_);
-    write("first best quality of "), write(Penalty), nl,
+    %write("first best quality of "), write(Penalty), nl,
     assert(bestQual(Penalty)),
     assert(bestPath(Tasks)).
 
-    
+	
 findPenalty([Task1,Task2|Other],FirstTask,NewPenalty, Machine) :-
     \+ tnpNode(Task1,Task2,_),
     treeNode(Machine,Task1,BasePenalty),
@@ -414,18 +405,28 @@ findPenalty([Task1|_],Task2,NewPenalty,Machine) :-
     treeNode(Machine,Task1,BasePenalty),
     NewPenalty is TNP+BasePenalty.
 
+	
+	
+possibleSol(Tasks,_,[],_) :-
+	%\+ printIf(Tasks, [3,4,7,5,1,6,2,8], "Best possible solution found"),
+    %write("New Possible Solution Check: "), write(Tasks),nl,
+    Tasks = [H|_],
+    tntCheck(Tasks, H),
+    isBest(Tasks),
+    !,fail.
+	
 possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
     NextMachine is Machine+1,
     member(H,[0]),                              %If head of list is 0
     \+ forbidMNode(Machine, NextTask),
     insertTask(Tasks, NextTask, Machine, NewTasks),
     possibleSol(NewTasks, Tail, RemainTask,NextMachine);
-    \+ member(H,[0]),                           %This is taken when H is not 0
+	\+ member(H,[0]),							%This is taken when H is not 0
     NextMachine is Machine+1,
     possibleSol(Tasks,Tail,[NextTask|RemainTask],NextMachine).
 
-    
-    
+	
+	
 
 tntCheck([Task1,Task2|Other],FirstTask) :-
     %write("TNT check"),nl,
@@ -451,7 +452,7 @@ del(X,[Y|Tail],[Y|Tail1]) :-
 
 unassignedTasks([H|T],List,8,UnassignedList):-
     member(H,List),
-    delete(H,List,UnassignedList);
+    delete(List,H,UnassignedList);
     List=UnassignedList.
 unassignedTasks([H|T],List,N,UnassignedList):-
     member(H,List),
@@ -533,7 +534,7 @@ writeToFile([M1,M2,M3,M4,M5,M6,M7,M8],Qual,OutputFile) :-
     write(Stream, C8),
     write(Stream, "; Quality: "),
     write(Stream, Qual),
-    close(Stream),    write(C1), write(" "),write(C2),write(" "), write(C3),write(" "),write(C4),write(" ") ,write(C5), write(" "),write(C6), write(" "),write(C7),write(" "), write(C8),write(" "), write("Quality"), write(" "),write(Qual),nl,
+    close(Stream),
     halt(0).
 
 writeToFile(Error) :-
