@@ -5,7 +5,6 @@
 %forbidMNode(Machine, Task) are added during runtime
 %tntNode(Task, Task) are added during runtime
 %tnpNode(Machine, Task, Penalty) are added during runtime\
-
 %bestPath().
 %bestQual().
 
@@ -27,7 +26,6 @@ sched :-
     \+ logicMaster(),nl,
     write("Print to output"),nl,
     printOutput(OutputFile).
-
 
 %Creates an invalid version assignment of the predicates so inital checks dont crash
 %(they are removed later)
@@ -113,8 +111,8 @@ tntEatPair(NewFlag) -->
 machs --> machsHeader,after,machsBody,marbLines.
 machsHeader --> ['machine penalties:'].
 %do we need two afters here?
-machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN.
-mN --> [X], {parseArray(X)}.
+machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN; {writeToFile(3)}.
+mN --> [X], {parseArray(X)}; writeToFile(3).
 %DCG for parsing Too-near Penalty information
 tnp --> tnpHeader,tnpBody('0').
 tnpHeader --> ['too-near penalities'].
@@ -182,16 +180,20 @@ parseTNT(Atom) :-
     checkChar(CB,")",2),
     checkEmpty(Remainder),
     Task1 is CHAR1-"@", Task2 is CHAR2-"@",
-    assert(tntNode(Task1,Task2)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
-
+    assert(tntNode(Task1,Task2)).        
 
 %Confirms array is of correct form, all nums >= 0, and asserts the results
 parseArray(Atom):-
+    write(Atom),nl,
     split_string(Atom,' ','',AtomList),
+    length(AtomList, 8),
+    write("past length check"),nl,
     parseArrayElems(AtomList,8),
     maplist(atom_number,AtomList,IntList),
     getMachine(1,Machine),
-    assertArray(Machine,1,IntList).
+    assertArray(Machine,1,IntList);
+    write("ALT error"),nl,
+    writeToFile(3).
  
 %look at first 8
 %if any non >=0 ints, invalid penalty
@@ -207,7 +209,6 @@ parseArrayElems(TailOf8 ,0) :-
     writeToFile(3);
     writeToFile(6).
 
-
 parseArrayElems([H|Tail], Counter) :-
     \+ H = '',
     \+ H = "",
@@ -222,7 +223,6 @@ parseArrayElems([H|Tail], Counter) :-
     writeToFile(6).  %non >=0 ints in first 8, invalid penalty error
 
 parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty error
-
 
 %Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
 getMachine(Check, Machine) :-
@@ -483,24 +483,20 @@ safeFPA(Tasks, Mach, Return):-
 
 safeFPA(List,Mach,List):-
     \+fpaNode(Mach,Task);
-    writeToFile(7),
-    write('No valid solution possible!'),nl,nl,nl,nl,
-    halt(0).
+    writeToFile(7).
 
 insertTask([_|T], Task, 1,[Task|T]).
 insertTask([H|T], Task, Assignment,[H|T2]):-
     NextAssignment is Assignment -1,
     insertTask(T,Task,NextAssignment,T2).
+
 %----------------------------LOGIC END----------------------------------
-
-
 printOutput(OutputFile) :-
     bestPath(Path),
     bestQual(Qual),
     writeToFile(Path,Qual,OutputFile);
     writeToFile(7),nl.
-    
-    
+
 reformatPath([],PathString,ConvertedString) :- ConvertedString = PathString.
 reformatPath([H|Tail], PathString, ConvertedString) :-
     mapChar(H,Letter),
@@ -524,7 +520,6 @@ mapError(5,"invalid penalty").
 mapError(6,"Error while parsing input file").
 mapError(7,"No valid solution possible!").
 
-%I am not sorry for the code below
 writeToFile([M1,M2,M3,M4,M5,M6,M7,M8],Qual,OutputFile) :-
     open(OutputFile , write, Stream),
     mapChar(M1,C1),
