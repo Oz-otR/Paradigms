@@ -137,7 +137,7 @@ after --> [''],after.
 after --> [].
 
 %Special DCG for machine penalty (it needs to return )
-marbLines --> {write("arb ome"),nl},[''],after; {write("special check"),nl},specialFailCase;{writeToFile(6)}.
+marbLines --> {write("arb ome"),nl},[''],after; {write("special check"),nl},specialFailCase;{writeToFile(3)}.
 
 %----------------------DCG For Parsing End------------------------
 %-------------------------Parsers Start------------------------------
