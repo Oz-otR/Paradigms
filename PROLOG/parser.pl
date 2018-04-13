@@ -72,6 +72,7 @@ validInput --> name,fpa,forbidM,tnt,machs,tnp.
 %DCG for parsing Name information
 name --> after, nameHeader, after, nameBody, arbLines.
 nameHeader --> ['Name:'];{writeToFile(6)}.
+nameBody --> ['wrongkeyword2'], {writeToFile(6)}.
 nameBody --> [X], {hasInternalSpace(X)}.
 
 %DCG for parsing Forced Partial Assignment information
@@ -137,7 +138,7 @@ after --> [''],after.
 after --> [].
 
 %Special DCG for machine penalty (it needs to return )
-marbLines --> {write("arb ome"),nl},[''],after; {write("special check"),nl},specialFailCase;{writeToFile(3)}.
+marbLines --> {write("arb ome"),nl},[''],after;{writeToFile(3)}.
 
 %----------------------DCG For Parsing End------------------------
 %-------------------------Parsers Start------------------------------
