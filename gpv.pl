@@ -10,6 +10,7 @@
     forbiddenMachine/2,
     machinePenalty/3,
 	tooNearPenalty/3,
+	tooNear/2,
 	error/1,
     score/1,
     path/1).
@@ -40,7 +41,7 @@ inout(In,Out):-
 	seen,
 	removeLast(X1, Y1),
 	append(Y1,"\n", Y2),%ensure whitepaces 
-	asserta(content(Y2)), % file + nl
+	asserta(content(Y2)), 
 	asserta(error(nil)),
 	parse,
 	error(Z),!,
@@ -73,8 +74,7 @@ read_file(-1,[]).
 read_file(_,Y):-
     get0(Z),
     read_file(Z,W),
-    Y = [Z|W].
-  
+    Y = [Z|W]. 
 
 writeout(Path,Str):-
   tell(Path),
@@ -230,8 +230,8 @@ parsePartialAssignment(_) :-
 parsePartialAssignment_(I) :-
   error(nil),!,
   paTuple(I, M, T),!,
-  \+ partialAssignment(M,_),!,
-  \+ partialAssignment(_,T),!,
+  \+ partialAssignment(M,_X),!,
+  \+ partialAssignment(_Y,T),!,
   assertz(partialAssignment(M,T)), !.
 
 paTuple(Word, M, T) :-
@@ -555,11 +555,11 @@ removePrefix([H|[]], [H|Y], Y).
 removePrefix([H|X], [H|Y], R) :- removePrefix(X, Y, R).
 
 
-% -----------------------------------Solver------------------------
+% -----------------------------------Logic------------------------
 
 
 solver2 :-
-  initFP([0,0,0,0,0,0,0,0], 1, _State),
+  initFP([0,0,0,0,0,0,0,0], 1, State),
   getRemainingTasks_helper(State, ['A','B','C','D','E','F','G','H'], 1, Remaining),
   solve(State, Remaining),!.
 solver2.
@@ -582,7 +582,7 @@ solve_(State, Remaining, [Task|Tasks]) :-
 assign(State, Task, State_) :-
   assign_(State, Task, State_).
 
-assign_([], _Task, []).
+assign_([], Task, []).
 assign_([0|List], Task, [Task|List]).
 assign_([X|List], Task, [X|State_]) :-
   assign_(List, Task, State_),!.
@@ -607,7 +607,7 @@ eval(State, Penalty) :-
 valid(State) :-
   valid_(State, State, 1).
 
-valid_([Task2|_], [Task1], Machine) :-
+valid_([Task2|State], [Task1], Machine) :-
   check_for_forbidden(Machine, Task1),
   \+tooNear(Task1, Task2).
 valid_(State, [Task1, Task2|Tasks], Machine) :-
@@ -615,6 +615,7 @@ valid_(State, [Task1, Task2|Tasks], Machine) :-
   \+tooNear(Task1, Task2),
   NextMachine is Machine + 1,
   valid_(State, [Task2|Tasks], NextMachine).
+
 
 initFP(List,9,List).
 initFP(List,Mach,Returned) :-
@@ -627,21 +628,21 @@ initFP(List,Mach,Returned) :-
 setup(List,Mach,Return) :-
 	partialAssignment(Mach,Task),
 	check_for_forbidden(Mach,Task),
-	replace(List,Task,Mach,Return).
+	replace_at_position(List,Task,Mach,Return).
 	
 setup(List,Mach,List) :-
-	\+partialAssignment(Mach,_Task).
+	\+partialAssignment(Mach,Task).
 	
 setup(List,Mach,List) :-	
 	partialAssignment(Mach,Task),
 	\+check_for_forbidden(Mach,Task),
 	retract(error(nil)),
-	asserta(error(noValidSolution)).
+	asserta(error(NoValid)).
 
-replace([_|T],Task,1,[Task|T]).
-replace([H|T],Task,Position,[H|Rest]) :-
+replace_at_position([_|T],Task,1,[Task|T]).
+replace_at_position([H|T],Task,Position,[H|Rest]) :-
 	NextPosition is Position - 1,
-	replace(T,Task,NextPosition,Rest).
+	replace_at_position(T,Task,NextPosition,Rest).
 	
 
 check_for_forbidden(Mach,Task) :-
@@ -703,7 +704,7 @@ calc_nearPen(L,Current,R) :-
 	R is Result + V.
 
 nearPen([],Current,Current).
-nearPen([_],Current,Current).	
+nearPen([N],Current,Current).	
 nearPen([N,M|Rest],Current,Result) :-
 	too_near_pen(N,M,Val),
 	Sum is Current + Val,
@@ -714,3 +715,4 @@ too_near_pen(X,Y,V) :-
 	0 < Z,
 	V is Z;
 	V is 0.
+
