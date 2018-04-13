@@ -73,7 +73,7 @@ read_file(Stream,[X|L]) :-
 validInput --> name,fpa,forbidM,tnt,machs,tnp.
 %DCG for parsing Name information
 name --> after, nameHeader, after, nameBody, arbLines.
-nameHeader --> ['Name:'].
+nameHeader --> ['Name:'];{writeToFile(6)}.
 nameBody --> [X], {hasInternalSpace(X)}.
 
 %DCG for parsing Forced Partial Assignment information
@@ -110,7 +110,7 @@ tntEatPair(NewFlag) -->
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
 %DCG for parsing Machine Penalty information
-machs --> machsHeader,after,machsBody,arbLines.
+machs --> machsHeader,after,machsBody,marbLines.
 machsHeader --> ['machine penalties:'].
 %do we need two afters here?
 machsBody --> mN,after,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN,after,mN.
@@ -126,10 +126,15 @@ tnpEatPair(NewFlag) -->
         [X], {parseTNP(X), NewFlag = '0'};
         [''], {NewFlag = '1'};
         [], {NewFlag = '2'}.
+
 %DCG for blank Newlines
 arbLines --> [''],after.
 after --> [''],after.
 after --> [].
+
+%Special DCG for machine penalty (it needs to return )
+marbLines --> [''],after; mN,{writeToFile(3)};{writeToFile(6)}.
+
 %----------------------DCG For Parsing End------------------------
 %-------------------------Parsers Start------------------------------
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
@@ -205,11 +210,16 @@ parseArrayElems(TailOf8 ,0) :-
 
 
 parseArrayElems([H|Tail], Counter) :-
-    atom_number(H, Number),
+    \+ H = '',
+	\+ H = "",
+	atom_number(H, Number),
     Number >= 0,
     NewCounter is Counter-1,
     parseArrayElems(Tail,NewCounter);
-    writeToFile(5).  %non >=0 ints in first 8, invalid penalty error
+	\+ H = '',
+	\+ H = "",
+    writeToFile(5);
+	writeToFile(6).  %non >=0 ints in first 8, invalid penalty error
 
 parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty error
 
@@ -275,7 +285,7 @@ checkPenalty(String, Number, Remainder) :-
     AtomList = [H|T],
     atom_number(H, Number),
     Remainder = T;
-    writeToFile(4),
+    writeToFile(5),
     write('invalid task0'),halt(0).
 
 
