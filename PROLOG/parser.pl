@@ -24,7 +24,8 @@ sched :-
     validInput(SpacelessLines, Out),
     destroyPredSeeds,
     printAll,
-    !,logicMaster(),nl,
+    \+ logicMaster(),nl,
+	write("Print to output"),nl,
     printOutput(OutputFile).
 
 
@@ -134,7 +135,7 @@ after --> [].
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseFPA(Atom) :-
     \+ Atom = '',
-        \+ Atom = 'forbidden machine:',
+    \+ Atom = 'forbidden machine:',
     atom_codes(Atom, List),
     check2Tuple(List,0),
     List = [OB,INT,COMMA,CHAR,CB|Remainder],
@@ -144,9 +145,9 @@ parseFPA(Atom) :-
     checkCharBounds(CHAR,2),
     checkChar(CB,")",2),
     checkEmpty(Remainder),
-    Task is INT-"0", Mach is CHAR-"@",
-    checkPA(Task,Mach),
-    assert(fpaNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+    Mach is INT-"0", Task is CHAR-"@",
+    checkPA(Mach,Task),
+    assert(fpaNode(Mach,Task)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseForbid(Atom) :-
     \+ Atom = '',
@@ -160,8 +161,8 @@ parseForbid(Atom) :-
     checkCharBounds(CHAR,2),
     checkChar(CB,")",2),
     checkEmpty(Remainder),
-    Task is INT-"0", Mach is CHAR-"@",
-    assert(forbidMNode(Task,Mach)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
+    Mach is INT-"0", Task is CHAR-"@",
+    assert(forbidMNode(Mach,Task)).         %Can change to  "assert(fpaNode(INT,CHAR));" if you want it in # not atom form
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
 parseTNT(Atom) :-
     \+ Atom = '',
@@ -185,7 +186,7 @@ parseArray(Atom):-
     parseArrayElems(AtomList,8),
     maplist(atom_number,AtomList,IntList),
     getMachine(1,Machine),
-    assertArray(1,Machine,IntList).
+    assertArray(Machine,1,IntList).
 
      
 %look at first 8
@@ -215,14 +216,17 @@ parseArrayElems([],_) :- writeToFile(3).  %less than 8 elements, machine penalty
 
 %Finds next unassigned machine (Check =< 8 is intentional, do not make it 7)
 getMachine(Check, Machine) :-
-    \+ treeNode(_,Check,_), Machine is Check;
-    Check =< 8, NewCheck is Check+1, getMachine(NewCheck, Machine).
+    \+ treeNode(Check,_,_),
+	Machine is Check;
+    Check =< 8,
+	NewCheck is Check+1,
+	getMachine(NewCheck, Machine).
 %Asserts all elements in the list as new treeNodes
 assertArray(_,_,[]).
-assertArray(Task, Machine, [Penalty|Remaining]) :-
-    assert(treeNode(Task, Machine, Penalty)),
+assertArray(Machine, Task, [Penalty|Remaining]) :-
+    assert(treeNode(Machine, Task, Penalty)),
     NewTask is Task+1,
-    assertArray(NewTask, Machine, Remaining).
+    assertArray(Machine, NewTask, Remaining).
 
 
 %Confirms an assignment FPA pair ex:(1,A) is of correct form.
@@ -252,9 +256,9 @@ hasInternalSpace(X):-
     writeToFile(6),
     write('Error while parsing input file'),nl,halt(0).
 %Checks if partial assignment has already been made to the task or machine
-checkPA(Task, Mach) :-
-    \+ fpaNode(Task,_),
-    \+ fpaNode(_,Mach);
+checkPA(Mach, Task) :-
+    \+ fpaNode(Mach,_),
+    \+ fpaNode(_,Task);
     writeToFile(1),
     write('partial assignment error'),nl,halt(0).
 %Special check for TNP last number which could be more than one digit
@@ -342,31 +346,27 @@ logicMaster:-
     runFPA([0,0,0,0,0,0,0,0],1,Tasks),
     unassignedTasks(Tasks, [1,2,3,4,5,6,7,8], 1, UnassignedList),
     write(Tasks),nl,
-    write(UnassignedList),nl,
+    write(UnassignedList),nl,!,
     permutation(UnassignedList, PossibleAssignment),
-    write("New possble assignment "), write(PossibleAssignment),nl,
+	%\+ printIf(PossibleAssignment, [4,7,5,1,6,2,8], "Checking the best solution"),
+    %write("New possble assignment "), write(PossibleAssignment),nl,
     %write("Bastpath so far found was: "), write(Tasks), write( " with a penalty of: "), write(Penalty),nl.
     %write("New permutation"), nl,
-    possibleSol(Tasks,Tasks,PossibleAssignment,1);
-    write("All possibilities checked"),nl,
-    true.
+    possibleSol(Tasks,Tasks,PossibleAssignment,1).
 
+	%Debug tool
+printIf(Check, Trigger, Message) :-
+	Check = Trigger,
+	write(Message),nl,fail.
+	
 
 possibleSol(Tasks, [], [], 9) :-
+	%\+ printIf(Tasks, [3,4,7,5,1,6,2,8], "Best possible solution found"),
     %write("New Possible Solution Check: "), write(Tasks),nl,
     Tasks = [H|_],
     tntCheck(Tasks, H),
     isBest(Tasks),
     !,fail.
-
-
-
-
-    %write("goodbye"),nl,fail.
-    %findPen(Tasks
-    %is it best
-    %assert
-    %fail
 
 
 
@@ -382,53 +382,50 @@ setBest(Tasks, Penalty) :-
     %write("check best"), nl,
     bestQual(Best),
     Penalty < Best,
-    write("new best"), nl,
+    %write("new best quality of "), write(Penalty), nl,
     retract(bestQual(_)),
     assert(bestQual(Penalty)),
     retract(bestPath(_)),
     assert(bestPath(Tasks));
     bestQual(_);
-    write("first best"), nl,
+    write("first best quality of "), write(Penalty), nl,
     assert(bestQual(Penalty)),
     assert(bestPath(Tasks)).
 
+	
 findPenalty([Task1,Task2|Other],FirstTask,NewPenalty, Machine) :-
     \+ tnpNode(Task1,Task2,_),
-    treeNode(Task1,Machine,BasePenalty),
+    treeNode(Machine,Task1,BasePenalty),
     NewMachine is Machine+1,
     findPenalty([Task2|Other],FirstTask,Penalty,NewMachine),
     NewPenalty is Penalty+BasePenalty;
 
     tnpNode(Task1,Task2,TNP),
-    treeNode(Task1,Machine,BasePenalty),
+    treeNode(Machine,Task1,BasePenalty),
     NewMachine is Machine+1,
     findPenalty([Task2|Other],FirstTask,Penalty,NewMachine),
     NewPenalty is Penalty+TNP+BasePenalty.
 
 findPenalty([Task1|_],Task2,NewPenalty,Machine) :-
     \+ tnpNode(Task1,Task2,_),
-    treeNode(Task1,Machine,BasePenalty),
+    treeNode(Machine,Task1,BasePenalty),
     NewPenalty is BasePenalty;
     tnpNode(Task1,Task2,TNP),
-    treeNode(Task1,Machine,BasePenalty),
+    treeNode(Machine,Task1,BasePenalty),
     NewPenalty is TNP+BasePenalty.
 
 possibleSol(Tasks, [H|Tail],[NextTask|RemainTask],Machine):-
     NextMachine is Machine+1,
-    member(H,[0]),                              %if head of list is 0
-    \+ forbidMNode(NextTask, Machine),
+    member(H,[0]),                              %If head of list is 0
+    \+ forbidMNode(Machine, NextTask),
     insertTask(Tasks, NextTask, Machine, NewTasks),
-    %write(NewTasks),nl,
     possibleSol(NewTasks, Tail, RemainTask,NextMachine);
+	\+ member(H,[0]),							%This is taken when H is not 0
     NextMachine is Machine+1,
     possibleSol(Tasks,Tail,[NextTask|RemainTask],NextMachine).
 
-    %New pred
-    %One of the perm of unassigned
-    %insert head of perm to first 0 (loop for all elements of permutaion)
-    %Check valid
-    %Check quality -> assert if better
-    %fail
+	
+	
 
 tntCheck([Task1,Task2|Other],FirstTask) :-
     %write("TNT check"),nl,
@@ -488,7 +485,7 @@ printOutput(OutputFile) :-
     bestPath(Path),
     bestQual(Qual),
     writeToFile(Path,Qual,OutputFile);
-    writetoFile(8),nl.
+    writeToFile(8),nl.
 
 reformatPath([],PathString,ConvertedString) :- ConvertedString = PathString.
 reformatPath([H|Tail], PathString, ConvertedString) :-
